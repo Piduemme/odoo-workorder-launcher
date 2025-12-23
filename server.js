@@ -1,8 +1,6 @@
 // ===============================================
-// === SERVER.JS - SERVER PRINCIPALE =============
+// === SERVER.JS - v2.1 ==========================
 // ===============================================
-// Server Express che espone API REST per l'interfaccia
-// e si connette a Odoo via XML-RPC
 
 const express = require('express');
 const path = require('path');
@@ -19,153 +17,143 @@ app.use(express.static(path.join(__dirname, 'public')));
 // === API ENDPOINTS =============================
 // ===============================================
 
-// GET /api/workcenters - Lista centri di lavoro con conteggi
+// GET /api/tags - Lista tag (Estrusione, Saldatura, Stampa)
+app.get('/api/tags', async (req, res) => {
+    try {
+        const tags = await odooApi.getWorkcenterTags();
+        res.json(tags);
+    } catch (error) {
+        console.error('[API] Errore tags:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/workcenters - Con tag e machine_type
 app.get('/api/workcenters', async (req, res) => {
     try {
-        console.log('[API] Richiesta centri di lavoro...');
+        console.log('[API] Richiesta workcenters...');
         const workcenters = await odooApi.getWorkcenters();
-        console.log(`[API] Trovati ${workcenters.length} centri di lavoro`);
+        console.log(`[API] ${workcenters.length} workcenters`);
         res.json(workcenters);
     } catch (error) {
-        console.error('[API] Errore recupero workcenters:', error.message);
+        console.error('[API] Errore workcenters:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// GET /api/workorders - TUTTI i work orders
+// GET /api/workorders - Tutti con operation_type
 app.get('/api/workorders', async (req, res) => {
     try {
-        console.log(`[API] Richiesta TUTTI i work orders`);
+        console.log('[API] Richiesta workorders...');
         const workorders = await odooApi.getAllWorkorders();
-        console.log(`[API] Trovati ${workorders.ready.length} pronti, ${workorders.active.length} attivi`);
+        console.log(`[API] ${workorders.ready.length} pronti, ${workorders.active.length} attivi`);
         res.json(workorders);
     } catch (error) {
-        console.error('[API] Errore recupero workorders:', error.message);
+        console.error('[API] Errore workorders:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// GET /api/workorders/search?q=termine - Ricerca
+// GET /api/workorders/search?q=...
 app.get('/api/workorders/search', async (req, res) => {
     try {
-        const searchTerm = req.query.q || '';
-        console.log(`[API] Ricerca work orders: "${searchTerm}"`);
+        const q = req.query.q || '';
+        if (q.length < 2) return res.json([]);
         
-        if (searchTerm.length < 2) {
-            return res.json([]);
-        }
-        
-        const workorders = await odooApi.searchWorkorders(searchTerm);
-        console.log(`[API] Trovati ${workorders.length} work orders`);
+        const workorders = await odooApi.searchWorkorders(q);
         res.json(workorders);
     } catch (error) {
-        console.error('[API] Errore ricerca workorders:', error.message);
+        console.error('[API] Errore search:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// GET /api/workorders/:id/details - Dettagli work order
-app.get('/api/workorders/:workorderId/details', async (req, res) => {
+// GET /api/workorders/:id/details
+app.get('/api/workorders/:id/details', async (req, res) => {
     try {
-        const workorderId = parseInt(req.params.workorderId);
-        console.log(`[API] Richiesta dettagli work order ${workorderId}`);
-        
-        const details = await odooApi.getWorkorderDetails(workorderId);
-        if (!details) {
-            return res.status(404).json({ error: 'Work order non trovato' });
-        }
-        
+        const id = parseInt(req.params.id);
+        const details = await odooApi.getWorkorderDetails(id);
+        if (!details) return res.status(404).json({ error: 'Non trovato' });
         res.json(details);
     } catch (error) {
-        console.error('[API] Errore dettagli workorder:', error.message);
+        console.error('[API] Errore details:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// GET /api/workorders/:id/timetracking - Storico tempi
-app.get('/api/workorders/:workorderId/timetracking', async (req, res) => {
+// GET /api/workorders/:id/timetracking
+app.get('/api/workorders/:id/timetracking', async (req, res) => {
     try {
-        const workorderId = parseInt(req.params.workorderId);
-        console.log(`[API] Richiesta time tracking work order ${workorderId}`);
-        
-        const timeLogs = await odooApi.getWorkorderTimeTracking(workorderId);
-        res.json(timeLogs);
+        const id = parseInt(req.params.id);
+        const logs = await odooApi.getWorkorderTimeTracking(id);
+        res.json(logs);
     } catch (error) {
-        console.error('[API] Errore time tracking:', error.message);
+        console.error('[API] Errore timetracking:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// POST /api/workorders/:id/start - Avvia work order
-app.post('/api/workorders/:workorderId/start', async (req, res) => {
+// POST /api/workorders/:id/start
+app.post('/api/workorders/:id/start', async (req, res) => {
     try {
-        const workorderId = parseInt(req.params.workorderId);
-        const targetWorkcenterId = req.body.targetWorkcenterId ? parseInt(req.body.targetWorkcenterId) : null;
+        const id = parseInt(req.params.id);
+        const targetWcId = req.body.targetWorkcenterId ? parseInt(req.body.targetWorkcenterId) : null;
         
-        console.log(`[API] Avvio work order ID: ${workorderId}, target workcenter: ${targetWorkcenterId || 'nessuno'}`);
-        
-        const result = await odooApi.startWorkorder(workorderId, targetWorkcenterId);
-        console.log(`[API] Work order ${workorderId} avviato con successo`);
+        console.log(`[API] Start WO ${id}, target WC: ${targetWcId || 'nessuno'}`);
+        const result = await odooApi.startWorkorder(id, targetWcId);
         res.json({ success: true, ...result });
     } catch (error) {
-        console.error('[API] Errore avvio workorder:', error.message);
+        console.error('[API] Errore start:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// POST /api/workorders/:id/pause - Mette in pausa
-app.post('/api/workorders/:workorderId/pause', async (req, res) => {
+// POST /api/workorders/:id/pause
+app.post('/api/workorders/:id/pause', async (req, res) => {
     try {
-        const workorderId = parseInt(req.params.workorderId);
-        console.log(`[API] Pausa work order ID: ${workorderId}`);
-        
-        const result = await odooApi.pauseWorkorder(workorderId);
-        console.log(`[API] Work order ${workorderId} in pausa`);
+        const id = parseInt(req.params.id);
+        const result = await odooApi.pauseWorkorder(id);
         res.json({ success: true, ...result });
     } catch (error) {
-        console.error('[API] Errore pausa workorder:', error.message);
+        console.error('[API] Errore pause:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// POST /api/workorders/:id/complete - Completa
-app.post('/api/workorders/:workorderId/complete', async (req, res) => {
+// POST /api/workorders/:id/complete
+app.post('/api/workorders/:id/complete', async (req, res) => {
     try {
-        const workorderId = parseInt(req.params.workorderId);
-        console.log(`[API] Completamento work order ID: ${workorderId}`);
-        
-        const result = await odooApi.completeWorkorder(workorderId);
-        console.log(`[API] Work order ${workorderId} completato`);
+        const id = parseInt(req.params.id);
+        const result = await odooApi.completeWorkorder(id);
         res.json({ success: true, ...result });
     } catch (error) {
-        console.error('[API] Errore completamento workorder:', error.message);
+        console.error('[API] Errore complete:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// GET /api/test - Test connessione
+// GET /api/test
 app.get('/api/test', async (req, res) => {
     try {
-        console.log('[API] Test connessione Odoo...');
         const uid = await odooApi.testConnection();
-        res.json({ success: true, uid, message: 'Connessione a Odoo riuscita!' });
+        res.json({ success: true, uid });
     } catch (error) {
-        console.error('[API] Errore test connessione:', error.message);
+        console.error('[API] Errore test:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 // ===============================================
-// === AVVIO SERVER ==============================
+// === START =====================================
 // ===============================================
 app.listen(PORT, '0.0.0.0', () => {
     console.log('');
     console.log('===============================================');
-    console.log('  ODOO WORKORDER LAUNCHER v2.0');
+    console.log('  ODOO WORKORDER LAUNCHER v2.1');
+    console.log('  + Filtro operazioni compatibili');
     console.log('===============================================');
-    console.log(`  Server avviato su http://0.0.0.0:${PORT}`);
+    console.log(`  http://0.0.0.0:${PORT}`);
     console.log(`  Odoo: ${process.env.ODOO_URL}`);
-    console.log(`  Database: ${process.env.ODOO_DB}`);
     console.log('===============================================');
     console.log('');
 });

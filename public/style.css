@@ -1140,3 +1140,99 @@ body {
         display: none;
     }
 }
+
+/* ===============================================
+   === STILI AGGIUNTIVI v2.1 =====================
+   === Filtro operazioni compatibili =============
+   =============================================== */
+
+/* Warning incompatibilità (rosso) */
+.modal-error {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: #f8d7da;
+    border: 2px solid var(--color-danger);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing);
+}
+
+.modal-error .warning-text {
+    color: #721c24;
+}
+
+/* Badge tipo operazione nell'header */
+.workcenter-type-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+    text-transform: uppercase;
+}
+
+.workcenter-type-badge.estrusione {
+    background: #F06050;
+    color: white;
+}
+
+.workcenter-type-badge.saldatura {
+    background: #9365B8;
+    color: white;
+}
+
+.workcenter-type-badge.stampa {
+    background: #D6145F;
+    color: white;
+}
+
+/* Badge operazione sulle card */
+.operation-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.operation-badge.estrusione {
+    background: #F06050;
+    color: white;
+}
+
+.operation-badge.saldatura {
+    background: #9365B8;
+    color: white;
+}
+
+.operation-badge.stampa {
+    background: #D6145F;
+    color: white;
+}
+
+/* Card work order incompatibile */
+.workorder-card.incompatible {
+    opacity: 0.6;
+    border-left-color: var(--color-danger) !important;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--bg-secondary),
+        var(--bg-secondary) 10px,
+        rgba(220, 53, 69, 0.08) 10px,
+        rgba(220, 53, 69, 0.08) 20px
+    ) !important;
+}
+
+.workorder-card.incompatible:hover {
+    opacity: 0.8;
+}
+
+/* Info operazione nel modal */
+#modalOperationType {
+    font-weight: 600;
+}
