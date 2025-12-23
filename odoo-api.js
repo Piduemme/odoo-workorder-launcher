@@ -134,6 +134,9 @@ async function getWorkcenters() {
 
 /**
  * Recupera work orders pronti per un centro di lavoro
+ * In Odoo 17+ i campi date sono cambiati:
+ * - date_planned_start -> date_start (o scheduled_date_start)
+ * - date_planned_finished -> date_finished
  * @param {number} workcenterId - ID del centro di lavoro
  * @returns {Promise<Array>} Lista di work orders in stato 'ready'
  */
@@ -148,6 +151,8 @@ async function getReadyWorkorders(workcenterId) {
             ['state', '=', 'ready'] // Solo ordini pronti
         ]],
         {
+            // Campi compatibili con Odoo 17+
+            // Rimuoviamo i campi date problematici per ora
             fields: [
                 'id',
                 'name',
@@ -158,11 +163,10 @@ async function getReadyWorkorders(workcenterId) {
                 'qty_produced',     // Quantità già prodotta
                 'qty_remaining',    // Quantità rimanente
                 'state',
-                'date_planned_start',
-                'date_planned_finished',
                 'duration_expected' // Durata prevista in minuti
             ],
-            order: 'date_planned_start, id'
+            // Ordiniamo solo per ID per evitare errori su campi non esistenti
+            order: 'id'
         }
     );
 

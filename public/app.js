@@ -103,6 +103,21 @@ function formatDate(isoDate) {
     });
 }
 
+/**
+ * Formatta la durata da minuti a ore:minuti
+ * @param {number} minutes - Durata in minuti
+ * @returns {string} Durata formattata (es. "2h 30m")
+ */
+function formatDuration(minutes) {
+    if (!minutes) return '-';
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    if (hours > 0) {
+        return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+}
+
 // ===============================================
 // === RENDER FUNCTIONS ==========================
 // ===============================================
@@ -169,8 +184,8 @@ function renderWorkorders() {
                     <div class="card-qty">
                         📊 Qtà: ${wo.qty_remaining || wo.qty_producing || '-'}
                     </div>
-                    <div class="card-date">
-                        📅 ${formatDate(wo.date_planned_start)}
+                    <div class="card-duration">
+                        ⏱️ Durata: ${formatDuration(wo.duration_expected)}
                     </div>
                 </div>
             </div>
