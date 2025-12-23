@@ -20,12 +20,10 @@ const host = urlParts.hostname;
 const port = urlParts.port || (isSecure ? 443 : 80);
 
 // --- CLIENTS XML-RPC ---
-// Client per autenticazione
 const commonClient = isSecure
     ? xmlrpc.createSecureClient({ host, port, path: '/xmlrpc/2/common' })
     : xmlrpc.createClient({ host, port, path: '/xmlrpc/2/common' });
 
-// Client per operazioni sui modelli
 const objectClient = isSecure
     ? xmlrpc.createSecureClient({ host, port, path: '/xmlrpc/2/object' })
     : xmlrpc.createClient({ host, port, path: '/xmlrpc/2/object' });
@@ -37,12 +35,7 @@ let cachedUid = null;
 // === FUNZIONI HELPER ===========================
 // ===============================================
 
-/**
- * Esegue autenticazione e ritorna UID utente
- * Usa cache per evitare autenticazioni ripetute
- */
 async function authenticate() {
-    // Se ho già l'UID in cache, lo riuso
     if (cachedUid) {
         return cachedUid;
     }
@@ -73,13 +66,6 @@ async function authenticate() {
     });
 }
 
-/**
- * Esegue una chiamata al modello Odoo
- * @param {string} model - Nome del modello (es. 'mrp.workcenter')
- * @param {string} method - Metodo da chiamare (es. 'search_read')
- * @param {Array} args - Argomenti posizionali
- * @param {Object} kwargs - Argomenti keyword
- */
 async function executeKw(model, method, args = [], kwargs = {}) {
     const uid = await authenticate();
 
@@ -89,9 +75,7 @@ async function executeKw(model, method, args = [], kwargs = {}) {
             [ODOO_DB, uid, ODOO_API_KEY, model, method, args, kwargs],
             (error, result) => {
                 if (error) {
-                    // Gestisco il caso speciale di "cannot marshal None"
-                    // Questo succede quando Odoo ritorna None (es. button_start)
-                    // In questo caso l'operazione è andata a buon fine
+                    // Gestisco "cannot marshal None" come successo
                     if (error.message && error.message.includes('cannot marshal None')) {
                         console.log(`[ODOO] ${model}.${method} completato (ritorno None)`);
                         resolve(true);
@@ -112,33 +96,9 @@ async function executeKw(model, method, args = [], kwargs = {}) {
 // === FUNZIONI PUBBLICHE ========================
 // ===============================================
 
-/**
- * Test connessione a Odoo
- * @returns {Promise<number>} UID dell'utente autenticato
- */
 async function testConnection() {
-    cachedUid = null; // Forza nuova autenticazione
+    cachedUid = null;
     return await authenticate();
-}
-
-/**
- * Recupera tutti i centri di lavoro attivi
- * @returns {Promise<Array>} Lista di workcenters
- */
-async function getWorkcenters() {
-    console.log('[ODOO] Recupero centri di lavoro...');
-    
-    const workcenters = await executeKw(
-        'mrp.workcenter',
-        'search_read',
-        [[['active', '=', true]]], // Domain: solo attivi
-        {
-            fields: ['id', 'name', 'code', 'color', 'working_state'],
-            order: 'sequence, name'
-        }
-    );
-
-    return workcenters;
 }
 
 // --- Campi standard per i work orders ---
@@ -146,19 +106,62 @@ const WORKORDER_FIELDS = [
     'id',
     'name',
     'display_name',
-    'production_id',    // Ordine di produzione padre
-    'product_id',       // Prodotto da realizzare
-    'workcenter_id',    // Centro di lavoro assegnato
-    'qty_producing',    // Quantità in produzione
-    'qty_produced',     // Quantità già prodotta
-    'qty_remaining',    // Quantità rimanente
+    'production_id',
+    'product_id',
+    'workcenter_id',
+    'qty_producing',
+    'qty_produced',
+    'qty_remaining',
     'state',
-    'duration_expected' // Durata prevista in minuti
+    'duration_expected',
+    'duration',           // Durata effettiva (minuti)
+    'date_start',         // Data inizio lavorazione
+    'date_finished',      // Data fine lavorazione
 ];
 
 /**
- * Recupera TUTTI i work orders pronti (di qualsiasi centro di lavoro)
- * @returns {Promise<Array>} Lista di work orders in stato 'ready'
+ * Recupera tutti i centri di lavoro attivi CON conteggio work orders
+ */
+async function getWorkcenters() {
+    console.log('[ODOO] Recupero centri di lavoro...');
+    
+    const workcenters = await executeKw(
+        'mrp.workcenter',
+        'search_read',
+        [[['active', '=', true]]],
+        {
+            fields: ['id', 'name', 'code', 'color', 'working_state'],
+            order: 'sequence, name'
+        }
+    );
+
+    // Recupero conteggi per ogni workcenter
+    console.log('[ODOO] Calcolo conteggi work orders per workcenter...');
+    
+    for (const wc of workcenters) {
+        // Conta ready
+        const readyCount = await executeKw(
+            'mrp.workorder',
+            'search_count',
+            [[['workcenter_id', '=', wc.id], ['state', '=', 'ready']]]
+        );
+        
+        // Conta progress
+        const progressCount = await executeKw(
+            'mrp.workorder',
+            'search_count',
+            [[['workcenter_id', '=', wc.id], ['state', '=', 'progress']]]
+        );
+        
+        wc.ready_count = readyCount;
+        wc.progress_count = progressCount;
+    }
+
+    return workcenters;
+}
+
+/**
+ * Recupera TUTTI i work orders pronti
  */
 async function getAllReadyWorkorders() {
     console.log(`[ODOO] Recupero TUTTI i work orders pronti...`);
@@ -166,9 +169,7 @@ async function getAllReadyWorkorders() {
     const workorders = await executeKw(
         'mrp.workorder',
         'search_read',
-        [[
-            ['state', '=', 'ready']
-        ]],
+        [[['state', '=', 'ready']]],
         {
             fields: WORKORDER_FIELDS,
             order: 'workcenter_id, id'
@@ -179,8 +180,7 @@ async function getAllReadyWorkorders() {
 }
 
 /**
- * Recupera TUTTI i work orders attivi (di qualsiasi centro di lavoro)
- * @returns {Promise<Array>} Lista di work orders in stato 'progress'
+ * Recupera TUTTI i work orders attivi
  */
 async function getAllActiveWorkorders() {
     console.log(`[ODOO] Recupero TUTTI i work orders attivi...`);
@@ -188,9 +188,7 @@ async function getAllActiveWorkorders() {
     const workorders = await executeKw(
         'mrp.workorder',
         'search_read',
-        [[
-            ['state', '=', 'progress']
-        ]],
+        [[['state', '=', 'progress']]],
         {
             fields: WORKORDER_FIELDS,
             order: 'workcenter_id, id'
@@ -201,8 +199,7 @@ async function getAllActiveWorkorders() {
 }
 
 /**
- * Recupera TUTTI i work orders (ready + progress) di tutti i centri
- * @returns {Promise<Object>} Oggetto con { ready: [...], active: [...] }
+ * Recupera TUTTI i work orders (ready + progress)
  */
 async function getAllWorkorders() {
     console.log(`[ODOO] Recupero TUTTI i work orders...`);
@@ -218,16 +215,11 @@ async function getAllWorkorders() {
 }
 
 /**
- * Cerca work orders per nome/prodotto (tutti i centri di lavoro)
- * @param {string} searchTerm - Termine di ricerca
- * @param {number} limit - Numero massimo di risultati (default 50)
- * @returns {Promise<Array>} Lista di work orders che matchano la ricerca
+ * Cerca work orders per nome/prodotto
  */
 async function searchWorkorders(searchTerm, limit = 50) {
     console.log(`[ODOO] Ricerca work orders: "${searchTerm}"...`);
     
-    // Cerco nei work orders in stato ready o progress
-    // Il termine può essere nel nome del workorder, del prodotto o della produzione
     const workorders = await executeKw(
         'mrp.workorder',
         'search_read',
@@ -240,7 +232,7 @@ async function searchWorkorders(searchTerm, limit = 50) {
         ]],
         {
             fields: WORKORDER_FIELDS,
-            order: 'state desc, id', // Prima i progress, poi i ready
+            order: 'state desc, id',
             limit: limit
         }
     );
@@ -249,9 +241,33 @@ async function searchWorkorders(searchTerm, limit = 50) {
 }
 
 /**
- * Recupera lo stato attuale di un work order
- * @param {number} workorderId - ID del work order
- * @returns {Promise<Object>} Work order con stato e workcenter
+ * Recupera dettagli completi di un work order
+ */
+async function getWorkorderDetails(workorderId) {
+    console.log(`[ODOO] Recupero dettagli work order ${workorderId}...`);
+    
+    const result = await executeKw(
+        'mrp.workorder',
+        'search_read',
+        [[['id', '=', workorderId]]],
+        { 
+            fields: [
+                ...WORKORDER_FIELDS,
+                'production_id',
+                'qty_production',
+                'company_id',
+                'worksheet_type',
+                'worksheet',
+                'operation_note'
+            ]
+        }
+    );
+    
+    return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Recupera info base di un work order
  */
 async function getWorkorderInfo(workorderId) {
     const result = await executeKw(
@@ -266,9 +282,6 @@ async function getWorkorderInfo(workorderId) {
 
 /**
  * Cambia il centro di lavoro di un work order
- * @param {number} workorderId - ID del work order
- * @param {number} newWorkcenterId - ID del nuovo centro di lavoro
- * @returns {Promise<boolean>} true se l'operazione è riuscita
  */
 async function changeWorkcenter(workorderId, newWorkcenterId) {
     console.log(`[ODOO] Cambio workcenter per work order ${workorderId} -> ${newWorkcenterId}...`);
@@ -284,17 +297,11 @@ async function changeWorkcenter(workorderId, newWorkcenterId) {
 }
 
 /**
- * Avvia un work order (porta da 'ready' a 'progress')
- * Se il work order è assegnato a un altro centro, prima lo riassegna
- * 
- * @param {number} workorderId - ID del work order da avviare
- * @param {number} targetWorkcenterId - ID del centro di lavoro target (opzionale)
- * @returns {Promise<Object>} Oggetto con success, newState, workcenterChanged
+ * Avvia un work order (ready -> progress)
  */
 async function startWorkorder(workorderId, targetWorkcenterId = null) {
     console.log(`[ODOO] Avvio work order ${workorderId}...`);
     
-    // Recupero info sul work order
     const workorderInfo = await getWorkorderInfo(workorderId);
     if (!workorderInfo) {
         throw new Error(`Work order ${workorderId} non trovato`);
@@ -303,53 +310,123 @@ async function startWorkorder(workorderId, targetWorkcenterId = null) {
     let workcenterChanged = false;
     const currentWorkcenterId = workorderInfo.workcenter_id ? workorderInfo.workcenter_id[0] : null;
     
-    // Se è specificato un target workcenter diverso da quello attuale, cambio
+    // Cambio workcenter se necessario
     if (targetWorkcenterId && currentWorkcenterId !== targetWorkcenterId) {
         console.log(`[ODOO] Work order ${workorderId} è su workcenter ${currentWorkcenterId}, cambio a ${targetWorkcenterId}`);
         await changeWorkcenter(workorderId, targetWorkcenterId);
         workcenterChanged = true;
     }
     
-    // Salvo lo stato prima dell'operazione
     const stateBefore = workorderInfo.state;
     console.log(`[ODOO] Stato prima: ${stateBefore}`);
     
-    // Se è già in progress, non faccio nulla
     if (stateBefore === 'progress') {
         console.log(`[ODOO] Work order ${workorderId} è già in progress`);
         return { success: true, newState: 'progress', workcenterChanged, alreadyStarted: true };
     }
     
-    // Chiamo button_start - potrebbe "fallire" con None ma funziona
+    // Chiamo button_start
     try {
-        await executeKw(
-            'mrp.workorder',
-            'button_start',
-            [[workorderId]]
-        );
+        await executeKw('mrp.workorder', 'button_start', [[workorderId]]);
     } catch (error) {
-        // Se l'errore è "cannot marshal None", ignoriamo
         if (!error.message || !error.message.includes('cannot marshal None')) {
             throw error;
         }
-        console.log(`[ODOO] button_start ritorna None (normale)`);
     }
     
-    // Verifico lo stato dopo l'operazione
+    // Verifico stato dopo
     const updatedInfo = await getWorkorderInfo(workorderId);
     const stateAfter = updatedInfo ? updatedInfo.state : null;
     console.log(`[ODOO] Stato dopo: ${stateAfter}`);
     
-    // Verifico che lo stato sia cambiato a 'progress'
     if (stateAfter === 'progress') {
         console.log(`[ODOO] Work order ${workorderId} avviato con successo`);
         return { success: true, newState: stateAfter, workcenterChanged };
     } else if (stateAfter === stateBefore) {
         throw new Error(`Lo stato non è cambiato (rimasto: ${stateAfter})`);
     } else {
-        console.log(`[ODOO] Work order ${workorderId} stato cambiato a: ${stateAfter}`);
         return { success: true, newState: stateAfter, workcenterChanged };
     }
+}
+
+/**
+ * Mette in pausa un work order (progress -> pending)
+ */
+async function pauseWorkorder(workorderId) {
+    console.log(`[ODOO] Pausa work order ${workorderId}...`);
+    
+    const workorderInfo = await getWorkorderInfo(workorderId);
+    if (!workorderInfo) {
+        throw new Error(`Work order ${workorderId} non trovato`);
+    }
+    
+    if (workorderInfo.state !== 'progress') {
+        throw new Error(`Work order non è in progress (stato: ${workorderInfo.state})`);
+    }
+    
+    // button_pending mette in pausa
+    try {
+        await executeKw('mrp.workorder', 'button_pending', [[workorderId]]);
+    } catch (error) {
+        if (!error.message || !error.message.includes('cannot marshal None')) {
+            throw error;
+        }
+    }
+    
+    const updatedInfo = await getWorkorderInfo(workorderId);
+    console.log(`[ODOO] Work order ${workorderId} stato dopo pausa: ${updatedInfo?.state}`);
+    
+    return { success: true, newState: updatedInfo?.state || 'pending' };
+}
+
+/**
+ * Completa un work order (progress -> done)
+ */
+async function completeWorkorder(workorderId) {
+    console.log(`[ODOO] Completamento work order ${workorderId}...`);
+    
+    const workorderInfo = await getWorkorderInfo(workorderId);
+    if (!workorderInfo) {
+        throw new Error(`Work order ${workorderId} non trovato`);
+    }
+    
+    if (workorderInfo.state !== 'progress') {
+        throw new Error(`Work order non è in progress (stato: ${workorderInfo.state})`);
+    }
+    
+    // button_finish completa il work order
+    try {
+        await executeKw('mrp.workorder', 'button_finish', [[workorderId]]);
+    } catch (error) {
+        if (!error.message || !error.message.includes('cannot marshal None')) {
+            throw error;
+        }
+    }
+    
+    const updatedInfo = await getWorkorderInfo(workorderId);
+    console.log(`[ODOO] Work order ${workorderId} stato dopo completamento: ${updatedInfo?.state}`);
+    
+    return { success: true, newState: updatedInfo?.state || 'done' };
+}
+
+/**
+ * Recupera log/storico delle azioni (time tracking)
+ */
+async function getWorkorderTimeTracking(workorderId) {
+    console.log(`[ODOO] Recupero time tracking per work order ${workorderId}...`);
+    
+    // mrp.workcenter.productivity traccia i tempi
+    const timeLogs = await executeKw(
+        'mrp.workcenter.productivity',
+        'search_read',
+        [[['workorder_id', '=', workorderId]]],
+        {
+            fields: ['date_start', 'date_end', 'duration', 'user_id', 'loss_id', 'description'],
+            order: 'date_start desc'
+        }
+    );
+    
+    return timeLogs;
 }
 
 // ===============================================
@@ -362,7 +439,11 @@ module.exports = {
     getAllActiveWorkorders,
     getAllWorkorders,
     searchWorkorders,
+    getWorkorderDetails,
+    getWorkorderInfo,
     startWorkorder,
+    pauseWorkorder,
+    completeWorkorder,
     changeWorkcenter,
-    getWorkorderInfo
+    getWorkorderTimeTracking
 };

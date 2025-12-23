@@ -2,43 +2,79 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#714B67">
     <title>Workorder Launcher - Odoo MRP</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
     <!-- ============================================= -->
     <!-- HEADER -->
     <!-- ============================================= -->
     <header class="header">
-        <h1>🏭 Avvio Lavorazioni</h1>
-        <div class="connection-status" id="connectionStatus">
-            <span class="status-dot"></span>
-            <span class="status-text">Connessione...</span>
+        <div class="header-left">
+            <h1>🏭 Workorder Launcher</h1>
+        </div>
+        <div class="header-right">
+            <button class="header-btn" id="btnToggleTheme" title="Tema scuro/chiaro">
+                🌙
+            </button>
+            <button class="header-btn" id="btnFullscreen" title="Fullscreen">
+                ⛶
+            </button>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Connessione...</span>
+            </div>
         </div>
     </header>
 
     <!-- ============================================= -->
-    <!-- BARRA DI RICERCA GLOBALE -->
+    <!-- BARRA DI RICERCA + CONTROLLI -->
     <!-- ============================================= -->
-    <div class="search-bar-container" id="searchBarContainer">
+    <div class="toolbar" id="toolbar">
         <div class="search-bar">
             <span class="search-icon">🔍</span>
             <input type="text" 
                    id="searchInput" 
-                   placeholder="Cerca work order per nome o prodotto..." 
+                   placeholder="Cerca work order..." 
                    autocomplete="off">
             <button class="search-clear hidden" id="searchClear">✕</button>
         </div>
+        
+        <div class="toolbar-controls">
+            <!-- Auto-refresh toggle -->
+            <div class="auto-refresh-control">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoRefreshToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="control-label">Auto-refresh</span>
+                <select id="refreshInterval" class="refresh-select">
+                    <option value="10">10s</option>
+                    <option value="30" selected>30s</option>
+                    <option value="60">1min</option>
+                    <option value="300">5min</option>
+                </select>
+            </div>
+            
+            <!-- Refresh manuale -->
+            <button class="toolbar-btn" id="btnRefresh" title="Aggiorna">
+                🔄 <span class="btn-text">Refresh</span>
+            </button>
+        </div>
+        
         <!-- Risultati ricerca (dropdown) -->
         <div class="search-results hidden" id="searchResults">
             <div class="search-results-header">
                 <span>Risultati ricerca</span>
                 <button class="btn-close-search" id="btnCloseSearch">Chiudi</button>
             </div>
-            <div class="search-results-list" id="searchResultsList">
-                <!-- Popolato dinamicamente -->
-            </div>
+            <div class="search-results-list" id="searchResultsList"></div>
         </div>
     </div>
 
@@ -49,9 +85,8 @@
         
         <!-- STEP 1: Selezione Centro di Lavoro -->
         <section class="step-section" id="stepWorkcenters">
-            <h2 class="section-title">1. Seleziona Centro di Lavoro</h2>
+            <h2 class="section-title">Seleziona Centro di Lavoro</h2>
             <div class="kanban-grid" id="workcenterGrid">
-                <!-- I centri di lavoro vengono caricati dinamicamente -->
                 <div class="loading-placeholder">
                     <div class="spinner"></div>
                     <p>Caricamento centri di lavoro...</p>
@@ -59,16 +94,27 @@
             </div>
         </section>
 
-        <!-- STEP 2: Work Orders del centro selezionato -->
+        <!-- STEP 2: Work Orders -->
         <section class="step-section hidden" id="stepWorkorders">
             <div class="section-header">
-                <h2 class="section-title">
-                    Work Orders per: 
-                    <span class="highlight" id="selectedWorkcenterName">-</span>
-                </h2>
-                <button class="btn-back" id="btnBack">
-                    ← Cambia centro
-                </button>
+                <div class="section-header-left">
+                    <button class="btn-back" id="btnBack">← Indietro</button>
+                    <h2 class="section-title">
+                        Centro: <span class="highlight" id="selectedWorkcenterName">-</span>
+                    </h2>
+                </div>
+                
+                <!-- Filtri -->
+                <div class="filters">
+                    <label class="filter-toggle">
+                        <input type="checkbox" id="filterCurrentWorkcenter">
+                        <span>Solo questo centro</span>
+                    </label>
+                    <label class="filter-toggle">
+                        <input type="checkbox" id="filterCompactView">
+                        <span>Vista compatta</span>
+                    </label>
+                </div>
             </div>
             
             <!-- Tab per Attivi / Pronti -->
@@ -81,46 +127,107 @@
                 </button>
             </div>
             
+            <!-- Timer info per tab attivi -->
+            <div class="active-info" id="activeInfo">
+                <span id="activeInfoText"></span>
+            </div>
+            
             <!-- Contenuto tab Attivi -->
             <div class="tab-content" id="tabContentActive">
-                <div class="kanban-grid" id="activeWorkorderGrid">
-                    <!-- Work orders attivi -->
-                </div>
+                <div class="kanban-grid" id="activeWorkorderGrid"></div>
             </div>
             
             <!-- Contenuto tab Pronti -->
             <div class="tab-content hidden" id="tabContentReady">
-                <div class="kanban-grid" id="readyWorkorderGrid">
-                    <!-- Work orders pronti -->
-                </div>
+                <div class="kanban-grid" id="readyWorkorderGrid"></div>
             </div>
         </section>
 
     </main>
 
     <!-- ============================================= -->
-    <!-- MODAL CONFERMA AVVIO -->
+    <!-- MODAL AZIONE WORK ORDER -->
     <!-- ============================================= -->
     <div class="modal-overlay hidden" id="modalOverlay">
         <div class="modal">
-            <h3 class="modal-title">Conferma Avvio</h3>
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Azione Work Order</h3>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            
             <div class="modal-body">
-                <p class="modal-text">
-                    Vuoi avviare la lavorazione per:<br>
-                    <strong id="modalWorkorderName">-</strong>
-                </p>
-                <!-- Avviso se il workcenter è diverso -->
+                <!-- Info work order -->
+                <div class="modal-workorder-info">
+                    <div class="info-row">
+                        <span class="info-label">Work Order:</span>
+                        <span class="info-value" id="modalWorkorderName">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Prodotto:</span>
+                        <span class="info-value" id="modalProductName">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Quantità:</span>
+                        <span class="info-value" id="modalQty">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Centro attuale:</span>
+                        <span class="info-value" id="modalCurrentWorkcenter">-</span>
+                    </div>
+                    <div class="info-row" id="modalDurationRow">
+                        <span class="info-label">Tempo trascorso:</span>
+                        <span class="info-value" id="modalDuration">-</span>
+                    </div>
+                </div>
+                
+                <!-- Avviso riassegnazione -->
                 <div class="modal-warning hidden" id="modalWorkcenterWarning">
                     <span class="warning-icon">⚠️</span>
                     <span class="warning-text">
-                        Questo work order è assegnato a <strong id="modalCurrentWorkcenter">-</strong>.<br>
                         Verrà riassegnato a <strong id="modalTargetWorkcenter">-</strong> prima dell'avvio.
                     </span>
                 </div>
+                
+                <!-- Note operazione (se presenti) -->
+                <div class="modal-notes hidden" id="modalNotes">
+                    <h4>Note operazione:</h4>
+                    <div class="notes-content" id="modalNotesContent"></div>
+                </div>
             </div>
-            <div class="modal-buttons">
-                <button class="btn btn-cancel" id="btnCancel">Annulla</button>
-                <button class="btn btn-confirm" id="btnConfirm">✓ Avvia</button>
+            
+            <div class="modal-actions" id="modalActions">
+                <!-- Pulsanti dinamici in base allo stato -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- MODAL DETTAGLI -->
+    <!-- ============================================= -->
+    <div class="modal-overlay hidden" id="detailsModalOverlay">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title">Dettagli Work Order</h3>
+                <button class="modal-close" id="detailsModalClose">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="details-content" id="detailsContent">
+                    <div class="loading-placeholder">
+                        <div class="spinner"></div>
+                        <p>Caricamento dettagli...</p>
+                    </div>
+                </div>
+                
+                <!-- Storico tempi -->
+                <div class="time-tracking" id="timeTracking">
+                    <h4>📊 Storico Tempi</h4>
+                    <div class="time-tracking-list" id="timeTrackingList"></div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="btnCloseDetails">Chiudi</button>
             </div>
         </div>
     </div>
@@ -129,6 +236,11 @@
     <!-- TOAST NOTIFICHE -->
     <!-- ============================================= -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Audio per feedback -->
+    <audio id="audioSuccess" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Onp2PfW1lZXB9i5aWhXdrZWZugI+cmI19cGpobn6MmJOGd29qaXCAjpiShHdxbGuBkJmQgHVwa2yBkZuOenNxbXCDlJqMd3NycHKEl5qJdHNzcnSGmJiGc3N0c3eImZeEcnR1dHqKmZWBcXV2dnuLmZN/cXZ3eH2MmJF9cXd4eX+NmI96cXh5eoGOl4x4cXl6e4OPloo2cXp7fYWQlYcycnt8f4eRk4UucnyAgYmSkYIqc36Bg4uTj38markup" type="audio/wav">
+    </audio>
 
     <script src="app.js"></script>
 </body>
