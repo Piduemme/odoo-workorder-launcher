@@ -317,18 +317,23 @@ async function getAllWorkorders() {
     return { ready, active };
 }
 
-async function searchWorkorders(searchTerm, limit = 50) {
+async function searchWorkorders(searchTerm, limit = 100) {
     console.log(`[ODOO] Ricerca: "${searchTerm}"...`);
     
+    // NOTA: display_name è un campo computed e ilike NON funziona bene su di esso!
+    // Il display_name è formato come "WH/MO/00127 - Estrusione"
+    // ma il campo 'name' contiene solo "Estrusione"
+    // Dobbiamo cercare su production_id.name per trovare "WH/MO/00127"
     const workorders = await executeKw('mrp.workorder', 'search_read', [[
         ['state', 'in', ['ready', 'progress']],
-        '|', '|',
-        ['name', 'ilike', searchTerm],
-        ['display_name', 'ilike', searchTerm],
-        ['product_id.name', 'ilike', searchTerm]
+        '|', '|', '|',
+        ['production_id.name', 'ilike', searchTerm],  // WH/MO/00127
+        ['name', 'ilike', searchTerm],                 // Estrusione, Saldatura
+        ['product_id.name', 'ilike', searchTerm],      // Nome prodotto
+        ['product_id.default_code', 'ilike', searchTerm]  // Codice prodotto es. [SL_1234]
     ]], {
         fields: WORKORDER_FIELDS,
-        order: 'state desc, id',
+        order: 'state desc, production_id',
         limit
     });
 
@@ -336,6 +341,7 @@ async function searchWorkorders(searchTerm, limit = 50) {
         wo.operation_type = wo.operation_id ? wo.operation_id[1] : null;
     });
 
+    console.log(`[ODOO] Trovati ${workorders.length} risultati per "${searchTerm}"`);
     return workorders;
 }
 
