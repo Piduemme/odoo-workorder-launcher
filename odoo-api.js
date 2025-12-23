@@ -89,6 +89,15 @@ async function executeKw(model, method, args = [], kwargs = {}) {
             [ODOO_DB, uid, ODOO_API_KEY, model, method, args, kwargs],
             (error, result) => {
                 if (error) {
+                    // Gestisco il caso speciale di "cannot marshal None"
+                    // Questo succede quando Odoo ritorna None (es. button_start)
+                    // In questo caso l'operazione è andata a buon fine
+                    if (error.message && error.message.includes('cannot marshal None')) {
+                        console.log(`[ODOO] ${model}.${method} completato (ritorno None)`);
+                        resolve(true);
+                        return;
+                    }
+                    
                     console.error(`[ODOO] Errore ${model}.${method}:`, error.message);
                     reject(error);
                     return;
@@ -174,23 +183,69 @@ async function getReadyWorkorders(workcenterId) {
 }
 
 /**
+ * Recupera lo stato attuale di un work order
+ * @param {number} workorderId - ID del work order
+ * @returns {Promise<string>} Stato del work order
+ */
+async function getWorkorderState(workorderId) {
+    const result = await executeKw(
+        'mrp.workorder',
+        'search_read',
+        [[['id', '=', workorderId]]],
+        { fields: ['state'] }
+    );
+    
+    return result.length > 0 ? result[0].state : null;
+}
+
+/**
  * Avvia un work order (porta da 'ready' a 'progress')
  * Chiama il metodo button_start di Odoo
+ * 
+ * NOTA: button_start ritorna None che causa un errore XML-RPC
+ * Questo viene gestito in executeKw, quindi l'errore è atteso
+ * 
  * @param {number} workorderId - ID del work order da avviare
- * @returns {Promise<boolean>} true se avviato con successo
+ * @returns {Promise<Object>} Oggetto con success e newState
  */
 async function startWorkorder(workorderId) {
     console.log(`[ODOO] Avvio work order ${workorderId}...`);
     
-    // In Odoo, per avviare un work order si usa button_start
-    const result = await executeKw(
-        'mrp.workorder',
-        'button_start',
-        [[workorderId]] // Lista di ID
-    );
-
-    console.log(`[ODOO] Work order ${workorderId} avviato`);
-    return result;
+    // Salvo lo stato prima dell'operazione
+    const stateBefore = await getWorkorderState(workorderId);
+    console.log(`[ODOO] Stato prima: ${stateBefore}`);
+    
+    // Chiamo button_start - potrebbe "fallire" con None ma funziona
+    try {
+        await executeKw(
+            'mrp.workorder',
+            'button_start',
+            [[workorderId]]
+        );
+    } catch (error) {
+        // Se l'errore è "cannot marshal None", ignoriamo
+        // L'operazione è andata a buon fine
+        if (!error.message || !error.message.includes('cannot marshal None')) {
+            throw error;
+        }
+        console.log(`[ODOO] button_start ritorna None (normale)`);
+    }
+    
+    // Verifico lo stato dopo l'operazione
+    const stateAfter = await getWorkorderState(workorderId);
+    console.log(`[ODOO] Stato dopo: ${stateAfter}`);
+    
+    // Verifico che lo stato sia cambiato a 'progress'
+    if (stateAfter === 'progress') {
+        console.log(`[ODOO] Work order ${workorderId} avviato con successo`);
+        return { success: true, newState: stateAfter };
+    } else if (stateAfter === stateBefore) {
+        throw new Error(`Lo stato non è cambiato (rimasto: ${stateAfter})`);
+    } else {
+        // Stato diverso ma non 'progress' - potrebbe essere ok
+        console.log(`[ODOO] Work order ${workorderId} stato cambiato a: ${stateAfter}`);
+        return { success: true, newState: stateAfter };
+    }
 }
 
 // ===============================================
@@ -200,5 +255,6 @@ module.exports = {
     testConnection,
     getWorkcenters,
     getReadyWorkorders,
-    startWorkorder
+    startWorkorder,
+    getWorkorderState
 };
