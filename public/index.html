@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workorder Launcher - Odoo MRP</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ============================================= -->
+    <!-- HEADER -->
+    <!-- ============================================= -->
+    <header class="header">
+        <h1>🏭 Avvio Lavorazioni</h1>
+        <div class="connection-status" id="connectionStatus">
+            <span class="status-dot"></span>
+            <span class="status-text">Connessione...</span>
+        </div>
+    </header>
+
+    <!-- ============================================= -->
+    <!-- CONTENUTO PRINCIPALE -->
+    <!-- ============================================= -->
+    <main class="main-content">
+        
+        <!-- STEP 1: Selezione Centro di Lavoro -->
+        <section class="step-section" id="stepWorkcenters">
+            <h2 class="section-title">1. Seleziona Centro di Lavoro</h2>
+            <div class="kanban-grid" id="workcenterGrid">
+                <!-- I centri di lavoro vengono caricati dinamicamente -->
+                <div class="loading-placeholder">
+                    <div class="spinner"></div>
+                    <p>Caricamento centri di lavoro...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2: Work Orders disponibili (nascosto inizialmente) -->
+        <section class="step-section hidden" id="stepWorkorders">
+            <div class="section-header">
+                <h2 class="section-title">
+                    2. Work Orders pronti per: 
+                    <span class="highlight" id="selectedWorkcenterName">-</span>
+                </h2>
+                <button class="btn-back" id="btnBack">
+                    ← Cambia centro
+                </button>
+            </div>
+            <div class="kanban-grid" id="workorderGrid">
+                <!-- I work orders vengono caricati dinamicamente -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ============================================= -->
+    <!-- MODAL CONFERMA AVVIO -->
+    <!-- ============================================= -->
+    <div class="modal-overlay hidden" id="modalOverlay">
+        <div class="modal">
+            <h3 class="modal-title">Conferma Avvio</h3>
+            <p class="modal-text">
+                Vuoi avviare la lavorazione per:<br>
+                <strong id="modalWorkorderName">-</strong>
+            </p>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" id="btnCancel">Annulla</button>
+                <button class="btn btn-confirm" id="btnConfirm">✓ Avvia</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- TOAST NOTIFICHE -->
+    <!-- ============================================= -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

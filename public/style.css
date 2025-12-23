@@ -1,0 +1,475 @@
+/* ===============================================
+   === STYLE.CSS - STILI INTERFACCIA =============
+   ===============================================
+   Interfaccia Kanban touch-friendly per tablet
+   Colori ispirati a Odoo con card colorate
+*/
+
+/* --- RESET E BASE --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Colori Odoo-like */
+    --color-primary: #714B67;
+    --color-primary-light: #8F6B84;
+    --color-success: #28a745;
+    --color-warning: #ffc107;
+    --color-danger: #dc3545;
+    --color-info: #17a2b8;
+    
+    /* Colori card (stessi di Odoo) */
+    --card-color-0: #FFFFFF;
+    --card-color-1: #F06050;  /* Rosso */
+    --card-color-2: #F4A460;  /* Arancione */
+    --card-color-3: #F7CD1F;  /* Giallo */
+    --card-color-4: #6CC1ED;  /* Azzurro */
+    --card-color-5: #814968;  /* Viola */
+    --card-color-6: #EB7E7F;  /* Rosa */
+    --card-color-7: #2C8397;  /* Teal */
+    --card-color-8: #475577;  /* Blu scuro */
+    --card-color-9: #D6145F;  /* Magenta */
+    --card-color-10: #30C381; /* Verde */
+    --card-color-11: #9365B8; /* Viola chiaro */
+    
+    /* Grigi */
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #adb5bd;
+    --gray-600: #6c757d;
+    --gray-700: #495057;
+    --gray-800: #343a40;
+    --gray-900: #212529;
+    
+    /* Dimensioni */
+    --header-height: 60px;
+    --card-min-width: 180px;
+    --card-max-width: 220px;
+    --spacing: 16px;
+    --border-radius: 8px;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--gray-100);
+    color: var(--gray-800);
+    min-height: 100vh;
+}
+
+/* --- HEADER --- */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-warning);
+    animation: pulse 1.5s infinite;
+}
+
+.status-dot.connected {
+    background: var(--color-success);
+    animation: none;
+}
+
+.status-dot.error {
+    background: var(--color-danger);
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* --- MAIN CONTENT --- */
+.main-content {
+    margin-top: var(--header-height);
+    padding: var(--spacing);
+    min-height: calc(100vh - var(--header-height));
+}
+
+/* --- SEZIONI --- */
+.step-section {
+    margin-bottom: calc(var(--spacing) * 2);
+}
+
+.step-section.hidden {
+    display: none;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing);
+    margin-bottom: var(--spacing);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: var(--spacing);
+}
+
+.section-header .section-title {
+    margin-bottom: 0;
+}
+
+.highlight {
+    color: var(--color-primary);
+}
+
+.btn-back {
+    background: var(--gray-200);
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-back:hover {
+    background: var(--gray-300);
+}
+
+/* --- GRIGLIA KANBAN --- */
+.kanban-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width), var(--card-max-width)));
+    gap: var(--spacing);
+    justify-content: start;
+}
+
+/* --- CARD CENTRO DI LAVORO --- */
+.workcenter-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: var(--spacing);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 5px solid var(--gray-400);
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.workcenter-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.workcenter-card:active {
+    transform: scale(0.98);
+}
+
+/* Colori card in base al colore Odoo */
+.workcenter-card[data-color="0"] { border-left-color: var(--card-color-0); background: var(--gray-100); }
+.workcenter-card[data-color="1"] { border-left-color: var(--card-color-1); background: #FEF0EF; }
+.workcenter-card[data-color="2"] { border-left-color: var(--card-color-2); background: #FEF5ED; }
+.workcenter-card[data-color="3"] { border-left-color: var(--card-color-3); background: #FFFCE8; }
+.workcenter-card[data-color="4"] { border-left-color: var(--card-color-4); background: #EDF7FC; }
+.workcenter-card[data-color="5"] { border-left-color: var(--card-color-5); background: #F5EDF2; }
+.workcenter-card[data-color="6"] { border-left-color: var(--card-color-6); background: #FDF0F0; }
+.workcenter-card[data-color="7"] { border-left-color: var(--card-color-7); background: #E9F4F6; }
+.workcenter-card[data-color="8"] { border-left-color: var(--card-color-8); background: #ECEEF2; }
+.workcenter-card[data-color="9"] { border-left-color: var(--card-color-9); background: #FBEAF1; }
+.workcenter-card[data-color="10"] { border-left-color: var(--card-color-10); background: #E9F8F1; }
+.workcenter-card[data-color="11"] { border-left-color: var(--card-color-11); background: #F3EEF8; }
+
+.workcenter-card .card-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 4px;
+}
+
+.workcenter-card .card-code {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+}
+
+.workcenter-card .card-count {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    background: var(--gray-200);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* --- CARD WORK ORDER --- */
+.workorder-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: var(--spacing);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 5px solid var(--color-info);
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.workorder-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.workorder-card:active {
+    transform: scale(0.98);
+}
+
+.workorder-card .card-header {
+    margin-bottom: 8px;
+}
+
+.workorder-card .card-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    line-height: 1.3;
+}
+
+.workorder-card .card-product {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    margin-top: 4px;
+}
+
+.workorder-card .card-details {
+    margin-top: auto;
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+.workorder-card .card-qty {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.workorder-card .card-date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* --- STATO VUOTO --- */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: calc(var(--spacing) * 3);
+    color: var(--gray-500);
+}
+
+.empty-state .empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing);
+}
+
+/* --- LOADING --- */
+.loading-placeholder {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: calc(var(--spacing) * 3);
+    color: var(--gray-500);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--gray-300);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    margin: 0 auto var(--spacing);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- MODAL --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--spacing);
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: calc(var(--spacing) * 1.5);
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing);
+    color: var(--gray-800);
+}
+
+.modal-text {
+    color: var(--gray-600);
+    margin-bottom: calc(var(--spacing) * 1.5);
+    line-height: 1.5;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: var(--spacing);
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-cancel {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.btn-cancel:hover {
+    background: var(--gray-300);
+}
+
+.btn-confirm {
+    background: var(--color-success);
+    color: white;
+}
+
+.btn-confirm:hover {
+    background: #218838;
+}
+
+.btn-confirm:disabled {
+    background: var(--gray-400);
+    cursor: not-allowed;
+}
+
+/* --- TOAST NOTIFICHE --- */
+.toast-container {
+    position: fixed;
+    bottom: var(--spacing);
+    right: var(--spacing);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toast {
+    background: var(--gray-800);
+    color: white;
+    padding: 12px 20px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease;
+    max-width: 350px;
+}
+
+.toast.success {
+    background: var(--color-success);
+}
+
+.toast.error {
+    background: var(--color-danger);
+}
+
+.toast.warning {
+    background: var(--color-warning);
+    color: var(--gray-800);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    :root {
+        --card-min-width: 150px;
+        --card-max-width: 1fr;
+    }
+    
+    .kanban-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .header h1 {
+        font-size: 1.2rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

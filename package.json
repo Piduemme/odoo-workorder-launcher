@@ -1,0 +1,25 @@
+{
+  "name": "odoo-workorder-launcher",
+  "version": "1.0.0",
+  "description": "Interfaccia Kanban per attivare work orders in Odoo MRP - seleziona centro di lavoro e avvia ordini di produzione",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "odoo",
+    "mrp",
+    "workorder",
+    "workcenter",
+    "manufacturing",
+    "kanban"
+  ],
+  "author": "Paolo Cagliano",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "xmlrpc": "^1.3.2",
+    "dotenv": "^16.3.1"
+  }
+}
