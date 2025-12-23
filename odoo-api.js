@@ -1,8 +1,8 @@
 // ===============================================
-// === ODOO-API.JS - CONNESSIONE ODOO v2.1 =======
+// === ODOO-API.JS - CONNESSIONE ODOO v2.2 =======
 // ===============================================
-// Aggiunto supporto per tag/machine_type e filtro
-// operazioni compatibili
+// FIX: Gestione errori robusta, timeout, retry,
+// invalidazione cache sessione
 
 const xmlrpc = require('xmlrpc');
 require('dotenv').config();
@@ -12,58 +12,157 @@ const ODOO_DB = process.env.ODOO_DB;
 const ODOO_USER = process.env.ODOO_USER;
 const ODOO_API_KEY = process.env.ODOO_API_KEY;
 
+// ===============================================
+// === CONFIGURAZIONE ============================
+// ===============================================
+
+const CONFIG = {
+    // Timeout per le chiamate XML-RPC (ms)
+    REQUEST_TIMEOUT: 30000,
+    
+    // Durata cache sessione (ms) - 1 ora
+    SESSION_CACHE_TTL: 60 * 60 * 1000,
+    
+    // Retry automatici su errori di rete
+    MAX_RETRIES: 3,
+    RETRY_DELAY: 1000,  // ms, raddoppia ad ogni retry
+    
+    // Errori che triggerano un retry
+    RETRYABLE_ERRORS: [
+        'ECONNRESET',
+        'ETIMEDOUT', 
+        'ECONNREFUSED',
+        'ENOTFOUND',
+        'EAI_AGAIN',
+        'socket hang up'
+    ]
+};
+
+// ===============================================
+// === CLIENT SETUP ==============================
+// ===============================================
+
 const urlParts = new URL(ODOO_URL);
 const isSecure = urlParts.protocol === 'https:';
 const host = urlParts.hostname;
 const port = urlParts.port || (isSecure ? 443 : 80);
 
-const commonClient = isSecure
-    ? xmlrpc.createSecureClient({ host, port, path: '/xmlrpc/2/common' })
-    : xmlrpc.createClient({ host, port, path: '/xmlrpc/2/common' });
-
-const objectClient = isSecure
-    ? xmlrpc.createSecureClient({ host, port, path: '/xmlrpc/2/object' })
-    : xmlrpc.createClient({ host, port, path: '/xmlrpc/2/object' });
-
-let cachedUid = null;
-
-// ===============================================
-// === HELPER FUNCTIONS ==========================
-// ===============================================
-
-async function authenticate() {
-    if (cachedUid) return cachedUid;
-
-    return new Promise((resolve, reject) => {
-        console.log('[ODOO] Autenticazione...');
-        commonClient.methodCall('authenticate', [ODOO_DB, ODOO_USER, ODOO_API_KEY, {}], (err, uid) => {
-            if (err) {
-                console.error('[ODOO] Errore auth:', err.message);
-                reject(new Error(`Auth fallita: ${err.message}`));
-                return;
-            }
-            if (!uid) {
-                reject(new Error('Auth fallita: credenziali non valide'));
-                return;
-            }
-            console.log(`[ODOO] UID: ${uid}`);
-            cachedUid = uid;
-            resolve(uid);
-        });
-    });
+// Factory per creare client con timeout
+function createClient(path) {
+    const options = { 
+        host, 
+        port, 
+        path,
+        timeout: CONFIG.REQUEST_TIMEOUT
+    };
+    return isSecure 
+        ? xmlrpc.createSecureClient(options)
+        : xmlrpc.createClient(options);
 }
 
-async function executeKw(model, method, args = [], kwargs = {}) {
-    const uid = await authenticate();
+// ===============================================
+// === SESSION CACHE CON TTL =====================
+// ===============================================
+
+let sessionCache = {
+    uid: null,
+    timestamp: 0
+};
+
+/**
+ * Verifica se la sessione cachata è ancora valida
+ */
+function isSessionValid() {
+    if (!sessionCache.uid) return false;
+    const age = Date.now() - sessionCache.timestamp;
+    return age < CONFIG.SESSION_CACHE_TTL;
+}
+
+/**
+ * Invalida la sessione (forza re-auth al prossimo call)
+ */
+function invalidateSession() {
+    console.log('[ODOO] Sessione invalidata');
+    sessionCache = { uid: null, timestamp: 0 };
+}
+
+// ===============================================
+// === RETRY LOGIC ===============================
+// ===============================================
+
+/**
+ * Verifica se un errore è recuperabile con retry
+ */
+function isRetryableError(error) {
+    if (!error) return false;
+    const msg = error.message || error.code || '';
+    return CONFIG.RETRYABLE_ERRORS.some(e => msg.includes(e));
+}
+
+/**
+ * Sleep helper per retry delay
+ */
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Esegue una funzione con retry automatico
+ */
+async function withRetry(fn, context = 'operation') {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error;
+            
+            // Se è un errore di sessione, invalida e riprova
+            if (error.message?.includes('Session expired') || 
+                error.message?.includes('Access Denied') ||
+                error.faultCode === 3) {
+                console.log(`[ODOO] Sessione scaduta, re-auth...`);
+                invalidateSession();
+            }
+            
+            // Se non è un errore recuperabile, non ritentare
+            if (!isRetryableError(error) && attempt > 1) {
+                break;
+            }
+            
+            if (attempt < CONFIG.MAX_RETRIES) {
+                const delay = CONFIG.RETRY_DELAY * Math.pow(2, attempt - 1);
+                console.log(`[ODOO] ${context} fallito (tentativo ${attempt}/${CONFIG.MAX_RETRIES}), retry in ${delay}ms...`);
+                await sleep(delay);
+            }
+        }
+    }
+    
+    throw lastError;
+}
+
+// ===============================================
+// === XMLRPC CON TIMEOUT ========================
+// ===============================================
+
+/**
+ * Chiamata XML-RPC con timeout e gestione errori
+ */
+function xmlrpcCall(client, method, params) {
     return new Promise((resolve, reject) => {
-        objectClient.methodCall('execute_kw', [ODOO_DB, uid, ODOO_API_KEY, model, method, args, kwargs], (err, result) => {
+        // Timeout manuale (backup se il client non lo rispetta)
+        const timeoutId = setTimeout(() => {
+            reject(new Error(`Timeout dopo ${CONFIG.REQUEST_TIMEOUT}ms`));
+        }, CONFIG.REQUEST_TIMEOUT + 5000);
+        
+        client.methodCall(method, params, (err, result) => {
+            clearTimeout(timeoutId);
+            
             if (err) {
-                if (err.message && err.message.includes('cannot marshal None')) {
-                    resolve(true);
-                    return;
-                }
-                console.error(`[ODOO] Errore ${model}.${method}:`, err.message);
-                reject(err);
+                // Normalizza errori XML-RPC
+                const error = new Error(err.faultString || err.message || 'Errore XML-RPC');
+                error.faultCode = err.faultCode;
+                error.code = err.code;
+                reject(error);
                 return;
             }
             resolve(result);
@@ -72,25 +171,69 @@ async function executeKw(model, method, args = [], kwargs = {}) {
 }
 
 // ===============================================
+// === AUTHENTICATION ============================
+// ===============================================
+
+async function authenticate() {
+    // Usa cache se valida
+    if (isSessionValid()) {
+        return sessionCache.uid;
+    }
+    
+    console.log('[ODOO] Autenticazione...');
+    const client = createClient('/xmlrpc/2/common');
+    
+    const uid = await xmlrpcCall(client, 'authenticate', [
+        ODOO_DB, ODOO_USER, ODOO_API_KEY, {}
+    ]);
+    
+    if (!uid) {
+        throw new Error('Autenticazione fallita: credenziali non valide');
+    }
+    
+    // Salva in cache con timestamp
+    sessionCache = {
+        uid,
+        timestamp: Date.now()
+    };
+    
+    console.log(`[ODOO] Autenticato, UID: ${uid}`);
+    return uid;
+}
+
+// ===============================================
+// === EXECUTE_KW ================================
+// ===============================================
+
+async function executeKw(model, method, args = [], kwargs = {}) {
+    return withRetry(async () => {
+        const uid = await authenticate();
+        const client = createClient('/xmlrpc/2/object');
+        
+        const result = await xmlrpcCall(client, 'execute_kw', [
+            ODOO_DB, uid, ODOO_API_KEY, model, method, args, kwargs
+        ]);
+        
+        return result;
+    }, `${model}.${method}`);
+}
+
+// ===============================================
 // === PUBLIC FUNCTIONS ==========================
 // ===============================================
 
 async function testConnection() {
-    cachedUid = null;
+    invalidateSession();  // Forza nuova auth per test
     return await authenticate();
 }
 
-// Campi work order con operation_id per capire il tipo
 const WORKORDER_FIELDS = [
     'id', 'name', 'display_name', 'production_id', 'product_id',
     'workcenter_id', 'qty_producing', 'qty_produced', 'qty_remaining',
     'state', 'duration_expected', 'duration', 'date_start', 'date_finished',
-    'operation_id'  // <-- Questo ci dice se è Estrusione/Saldatura/Stampa
+    'operation_id'
 ];
 
-/**
- * Recupera i tag disponibili (Estrusione, Saldatura, Stampa)
- */
 async function getWorkcenterTags() {
     console.log('[ODOO] Recupero tag workcenter...');
     const tags = await executeKw('mrp.workcenter.tag', 'search_read', [[]], {
@@ -99,9 +242,6 @@ async function getWorkcenterTags() {
     return tags;
 }
 
-/**
- * Recupera i machine types disponibili
- */
 async function getMachineTypes() {
     console.log('[ODOO] Recupero machine types...');
     try {
@@ -115,9 +255,6 @@ async function getMachineTypes() {
     }
 }
 
-/**
- * Recupera tutti i centri di lavoro con tag e machine_type
- */
 async function getWorkcenters() {
     console.log('[ODOO] Recupero centri di lavoro...');
     
@@ -129,14 +266,11 @@ async function getWorkcenters() {
         }
     );
 
-    // Recupero i tag per avere i nomi
     const tags = await getWorkcenterTags();
     const tagMap = {};
     tags.forEach(t => tagMap[t.id] = t);
 
-    // Arricchisco i workcenter con info tag
     for (const wc of workcenters) {
-        // Conta work orders
         const readyCount = await executeKw('mrp.workorder', 'search_count', 
             [[['workcenter_id', '=', wc.id], ['state', '=', 'ready']]]
         );
@@ -146,24 +280,15 @@ async function getWorkcenters() {
         
         wc.ready_count = readyCount;
         wc.progress_count = progressCount;
-        
-        // Info sui tag
         wc.tags = (wc.tag_ids || []).map(tid => tagMap[tid]).filter(Boolean);
         wc.tag_names = wc.tags.map(t => t.name);
-        
-        // Machine type name
         wc.machine_type_name = wc.machine_type_id ? wc.machine_type_id[1] : null;
-        
-        // Tipo principale (per filtro) - uso machine_type o primo tag
         wc.operation_type = wc.machine_type_name || (wc.tag_names[0] || null);
     }
 
     return workcenters;
 }
 
-/**
- * Recupera TUTTI i work orders con info operazione
- */
 async function getAllWorkorders() {
     console.log('[ODOO] Recupero TUTTI i work orders...');
     
@@ -178,11 +303,9 @@ async function getAllWorkorders() {
         })
     ]);
     
-    // Arricchisco con operation_type
     const enrichWorkorder = (wo) => {
-        // operation_id è [id, "Nome Operazione"] es. [123, "Estrusione"]
         wo.operation_type = wo.operation_id ? wo.operation_id[1] : null;
-        wo.operation_name = wo.operation_type; // alias
+        wo.operation_name = wo.operation_type;
         return wo;
     };
     
@@ -194,9 +317,6 @@ async function getAllWorkorders() {
     return { ready, active };
 }
 
-/**
- * Cerca work orders
- */
 async function searchWorkorders(searchTerm, limit = 50) {
     console.log(`[ODOO] Ricerca: "${searchTerm}"...`);
     
@@ -219,9 +339,6 @@ async function searchWorkorders(searchTerm, limit = 50) {
     return workorders;
 }
 
-/**
- * Dettagli work order
- */
 async function getWorkorderDetails(workorderId) {
     console.log(`[ODOO] Dettagli WO ${workorderId}...`);
     
@@ -238,9 +355,6 @@ async function getWorkorderDetails(workorderId) {
     return null;
 }
 
-/**
- * Info base work order
- */
 async function getWorkorderInfo(workorderId) {
     const result = await executeKw('mrp.workorder', 'search_read', 
         [[['id', '=', workorderId]]], 
@@ -255,18 +369,12 @@ async function getWorkorderInfo(workorderId) {
     return null;
 }
 
-/**
- * Cambia workcenter
- */
 async function changeWorkcenter(workorderId, newWorkcenterId) {
     console.log(`[ODOO] Cambio WC ${workorderId} -> ${newWorkcenterId}...`);
     await executeKw('mrp.workorder', 'write', [[workorderId], { workcenter_id: newWorkcenterId }]);
     return true;
 }
 
-/**
- * Avvia work order
- */
 async function startWorkorder(workorderId, targetWorkcenterId = null) {
     console.log(`[ODOO] Avvio WO ${workorderId}...`);
     
@@ -295,9 +403,6 @@ async function startWorkorder(workorderId, targetWorkcenterId = null) {
     return { success: true, newState: updated?.state || 'progress', workcenterChanged };
 }
 
-/**
- * Pausa work order
- */
 async function pauseWorkorder(workorderId) {
     console.log(`[ODOO] Pausa WO ${workorderId}...`);
     
@@ -315,9 +420,6 @@ async function pauseWorkorder(workorderId) {
     return { success: true, newState: updated?.state || 'pending' };
 }
 
-/**
- * Completa work order
- */
 async function completeWorkorder(workorderId) {
     console.log(`[ODOO] Completa WO ${workorderId}...`);
     
@@ -335,9 +437,6 @@ async function completeWorkorder(workorderId) {
     return { success: true, newState: updated?.state || 'done' };
 }
 
-/**
- * Time tracking
- */
 async function getWorkorderTimeTracking(workorderId) {
     console.log(`[ODOO] Time tracking WO ${workorderId}...`);
     
@@ -368,5 +467,6 @@ module.exports = {
     pauseWorkorder,
     completeWorkorder,
     changeWorkcenter,
-    getWorkorderTimeTracking
+    getWorkorderTimeTracking,
+    invalidateSession  // Esporto per uso esterno se serve
 };

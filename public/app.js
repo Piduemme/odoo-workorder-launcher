@@ -1,6 +1,282 @@
 // ===============================================
-// === APP.JS - v2.1 =============================
-// === + Filtro operazioni compatibili ===========
+// === APP.JS - v2.2 =============================
+// === FIX: Race conditions, Memory leaks ========
+// ===============================================
+
+// ===============================================
+// === REQUEST MANAGER ===========================
+// === Previene race conditions ==================
+// ===============================================
+
+const RequestManager = {
+    // Mappa delle richieste in corso per tipo
+    pending: new Map(),
+    
+    // Contatore per identificare le richieste
+    requestId: 0,
+    
+    /**
+     * Esegue una richiesta cancellando eventuali richieste
+     * precedenti dello stesso tipo
+     */
+    async execute(type, fn) {
+        // Genera nuovo ID per questa richiesta
+        const id = ++this.requestId;
+        this.pending.set(type, id);
+        
+        try {
+            const result = await fn();
+            
+            // Se nel frattempo è partita un'altra richiesta dello stesso tipo,
+            // scarta questo risultato (è obsoleto)
+            if (this.pending.get(type) !== id) {
+                console.log(`[RequestManager] Risultato scartato per ${type} (obsoleto)`);
+                return null;
+            }
+            
+            return result;
+        } catch (error) {
+            // Propaga l'errore solo se questa richiesta è ancora quella attiva
+            if (this.pending.get(type) === id) {
+                throw error;
+            }
+            return null;
+        }
+    },
+    
+    /**
+     * Cancella tutte le richieste pendenti di un tipo
+     */
+    cancel(type) {
+        this.pending.delete(type);
+    },
+    
+    /**
+     * Verifica se c'è una richiesta in corso per un tipo
+     */
+    isPending(type) {
+        return this.pending.has(type);
+    }
+};
+
+// ===============================================
+// === TIMER MANAGER =============================
+// === Gestione centralizzata dei timer ==========
+// ===============================================
+
+const TimerManager = {
+    // Timer per elapsed time dei work order
+    elapsedTimers: new Map(),
+    
+    // Timer per auto-refresh
+    autoRefreshTimer: null,
+    
+    // Stato visibilità pagina
+    isPageVisible: true,
+    
+    /**
+     * Inizializza il manager
+     */
+    init() {
+        // Gestione visibilità pagina per risparmiare CPU/batteria
+        document.addEventListener('visibilitychange', () => {
+            this.isPageVisible = !document.hidden;
+            
+            if (this.isPageVisible) {
+                console.log('[TimerManager] Pagina visibile, riprendo timer');
+                this.resumeAll();
+            } else {
+                console.log('[TimerManager] Pagina nascosta, pauso timer');
+                this.pauseAll();
+            }
+        });
+        
+        // Cleanup quando l'utente lascia la pagina
+        window.addEventListener('beforeunload', () => {
+            this.clearAll();
+        });
+    },
+    
+    /**
+     * Avvia/aggiorna timer elapsed per un work order
+     */
+    startElapsedTimer(woId, startDate) {
+        // Pulisci timer esistente per questo WO
+        this.stopElapsedTimer(woId);
+        
+        if (!startDate || !this.isPageVisible) return;
+        
+        // Aggiorna subito
+        this.updateElapsedDisplay(woId, startDate);
+        
+        // Poi aggiorna ogni minuto
+        const timerId = setInterval(() => {
+            if (this.isPageVisible) {
+                this.updateElapsedDisplay(woId, startDate);
+            }
+        }, 60000);
+        
+        this.elapsedTimers.set(woId, { timerId, startDate });
+    },
+    
+    /**
+     * Ferma timer elapsed per un work order
+     */
+    stopElapsedTimer(woId) {
+        const timer = this.elapsedTimers.get(woId);
+        if (timer) {
+            clearInterval(timer.timerId);
+            this.elapsedTimers.delete(woId);
+        }
+    },
+    
+    /**
+     * Pulisce TUTTI i timer elapsed
+     */
+    clearAllElapsedTimers() {
+        for (const [woId, timer] of this.elapsedTimers) {
+            clearInterval(timer.timerId);
+        }
+        this.elapsedTimers.clear();
+    },
+    
+    /**
+     * Aggiorna il display del tempo trascorso
+     */
+    updateElapsedDisplay(woId, startDate) {
+        const el = document.querySelector(`.workorder-card[data-id="${woId}"] .card-timer`);
+        if (el) {
+            el.textContent = formatElapsedTime(startDate);
+        }
+    },
+    
+    /**
+     * Sincronizza i timer con i work order attivi
+     */
+    syncWithWorkorders(activeWorkorders) {
+        // Set di WO attivi correnti
+        const activeIds = new Set(activeWorkorders.map(wo => wo.id));
+        
+        // Rimuovi timer per WO non più attivi
+        for (const woId of this.elapsedTimers.keys()) {
+            if (!activeIds.has(woId)) {
+                this.stopElapsedTimer(woId);
+            }
+        }
+        
+        // Aggiungi/aggiorna timer per WO attivi
+        for (const wo of activeWorkorders) {
+            if (wo.date_start) {
+                // Avvia solo se non esiste già
+                if (!this.elapsedTimers.has(wo.id)) {
+                    this.startElapsedTimer(wo.id, wo.date_start);
+                }
+            }
+        }
+    },
+    
+    /**
+     * Avvia auto-refresh
+     */
+    startAutoRefresh(intervalSec, callback) {
+        this.stopAutoRefresh();
+        
+        if (!this.isPageVisible) return;
+        
+        this.autoRefreshTimer = setInterval(() => {
+            if (this.isPageVisible) {
+                callback();
+            }
+        }, intervalSec * 1000);
+    },
+    
+    /**
+     * Ferma auto-refresh
+     */
+    stopAutoRefresh() {
+        if (this.autoRefreshTimer) {
+            clearInterval(this.autoRefreshTimer);
+            this.autoRefreshTimer = null;
+        }
+    },
+    
+    /**
+     * Pausa tutti i timer (quando la pagina non è visibile)
+     */
+    pauseAll() {
+        this.stopAutoRefresh();
+        // Non fermiamo i timer elapsed, ma controlliamo isPageVisible prima di aggiornare
+    },
+    
+    /**
+     * Riprendi tutti i timer
+     */
+    resumeAll() {
+        // Se auto-refresh era attivo, riavvialo
+        if (state.autoRefresh && state.selectedWorkcenter) {
+            this.startAutoRefresh(state.refreshInterval, () => loadAllWorkorders());
+            // Refresh immediato quando si torna sulla pagina
+            loadAllWorkorders();
+        }
+        
+        // Aggiorna subito tutti i display elapsed
+        for (const [woId, timer] of this.elapsedTimers) {
+            this.updateElapsedDisplay(woId, timer.startDate);
+        }
+    },
+    
+    /**
+     * Pulisce tutto
+     */
+    clearAll() {
+        this.clearAllElapsedTimers();
+        this.stopAutoRefresh();
+    }
+};
+
+// ===============================================
+// === DEBOUNCE/THROTTLE =========================
+// ===============================================
+
+/**
+ * Debounce: esegue la funzione solo dopo che è passato
+ * un certo tempo dall'ultima chiamata
+ */
+function debounce(fn, delay) {
+    let timeoutId;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+/**
+ * Throttle: esegue la funzione al massimo una volta
+ * ogni `limit` millisecondi
+ */
+function throttle(fn, limit) {
+    let inThrottle = false;
+    let lastArgs = null;
+    
+    return function(...args) {
+        if (!inThrottle) {
+            fn.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => {
+                inThrottle = false;
+                if (lastArgs) {
+                    fn.apply(this, lastArgs);
+                    lastArgs = null;
+                }
+            }, limit);
+        } else {
+            lastArgs = args;
+        }
+    };
+}
+
+// ===============================================
+// === STATE =====================================
 // ===============================================
 
 const state = {
@@ -15,9 +291,11 @@ const state = {
     darkMode: false,
     compactView: false,
     filterCurrentWorkcenter: false,
-    filterCompatible: true,  // NUOVO: filtro compatibilità
-    refreshTimer: null,
-    elapsedTimers: {}
+    filterCompatible: true,
+    
+    // Flag per prevenire azioni multiple
+    isLoading: false,
+    isActionInProgress: false
 };
 
 const $ = id => document.getElementById(id);
@@ -53,24 +331,13 @@ const formatDateTime = iso => {
     return new Date(iso).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
 
-/**
- * Normalizza il tipo operazione per confronto
- * es. "Estrusione" -> "estrusione"
- */
 const normalizeOpType = type => (type || '').toLowerCase().trim();
 
-/**
- * Verifica se un work order è compatibile con un workcenter
- */
 const isCompatible = (wo, wc) => {
     if (!wo || !wc) return true;
-    
     const woType = normalizeOpType(wo.operation_type);
     const wcType = normalizeOpType(wc.operation_type);
-    
-    // Se uno dei due non ha tipo, considera compatibile
     if (!woType || !wcType) return true;
-    
     return woType === wcType;
 };
 
@@ -109,6 +376,15 @@ const setEmpty = (grid, icon, msg) => {
     grid.innerHTML = `<div class="empty-state"><div class="empty-icon">${icon}</div><p>${msg}</p></div>`;
 };
 
+/**
+ * Imposta stato di caricamento globale
+ */
+function setGlobalLoading(loading) {
+    state.isLoading = loading;
+    $('btnRefresh').disabled = loading;
+    $('btnRefresh').textContent = loading ? '⏳' : '🔄';
+}
+
 // ===============================================
 // === SETTINGS ==================================
 // ===============================================
@@ -138,8 +414,6 @@ function loadSettings() {
     $('autoRefreshToggle').checked = state.autoRefresh;
     state.refreshInterval = parseInt(localStorage.getItem('refreshInterval') || '30');
     $('refreshInterval').value = state.refreshInterval;
-    
-    // Filtro compatibile default true
     state.filterCompatible = localStorage.getItem('filterCompatible') !== 'false';
     $('filterCompatible').checked = state.filterCompatible;
 }
@@ -149,17 +423,13 @@ function loadSettings() {
 // ===============================================
 
 function startAutoRefresh() {
-    stopAutoRefresh();
     if (state.autoRefresh && state.selectedWorkcenter) {
-        state.refreshTimer = setInterval(() => loadAllWorkorders(), state.refreshInterval * 1000);
+        TimerManager.startAutoRefresh(state.refreshInterval, () => loadAllWorkorders());
     }
 }
 
 function stopAutoRefresh() {
-    if (state.refreshTimer) {
-        clearInterval(state.refreshTimer);
-        state.refreshTimer = null;
-    }
+    TimerManager.stopAutoRefresh();
 }
 
 function toggleAutoRefresh() {
@@ -177,26 +447,6 @@ function changeRefreshInterval() {
     state.refreshInterval = parseInt($('refreshInterval').value);
     localStorage.setItem('refreshInterval', state.refreshInterval);
     if (state.autoRefresh) startAutoRefresh();
-}
-
-// ===============================================
-// === ELAPSED TIMERS ============================
-// ===============================================
-
-function startElapsedTimers() {
-    Object.values(state.elapsedTimers).forEach(t => clearInterval(t));
-    state.elapsedTimers = {};
-    state.workorders.active.forEach(wo => {
-        if (wo.date_start) {
-            updateElapsedTime(wo.id, wo.date_start);
-            state.elapsedTimers[wo.id] = setInterval(() => updateElapsedTime(wo.id, wo.date_start), 60000);
-        }
-    });
-}
-
-function updateElapsedTime(id, startDate) {
-    const el = document.querySelector(`.workorder-card[data-id="${id}"] .card-timer`);
-    if (el) el.textContent = formatElapsedTime(startDate);
 }
 
 // ===============================================
@@ -234,13 +484,9 @@ function renderWorkorderCard(wo) {
     const wcId = wo.workcenter_id ? wo.workcenter_id[0] : null;
     const isCurrent = state.selectedWorkcenter && wcId === state.selectedWorkcenter.id;
     
-    // Verifica compatibilità
     const compatible = isCompatible(wo, state.selectedWorkcenter);
     
-    // Se filtro attivo e non compatibile, nascondi
     if (state.filterCompatible && !compatible) return '';
-    
-    // Se filtro "solo questo centro" attivo
     if (state.filterCurrentWorkcenter && !isCurrent) return '';
     
     const classes = ['workorder-card'];
@@ -273,11 +519,9 @@ function renderWorkorders() {
     const activeGrid = $('activeWorkorderGrid');
     const readyGrid = $('readyWorkorderGrid');
     
-    // Filtra in base ai criteri attivi
     const filterWo = wo => {
         const compatible = isCompatible(wo, state.selectedWorkcenter);
         const isCurrent = wo.workcenter_id?.[0] === state.selectedWorkcenter?.id;
-        
         if (state.filterCompatible && !compatible) return false;
         if (state.filterCurrentWorkcenter && !isCurrent) return false;
         return true;
@@ -290,9 +534,7 @@ function renderWorkorders() {
     $('countReady').textContent = readyFiltered.length;
     
     const totalActive = state.workorders.active.length;
-    const totalReady = state.workorders.ready.length;
     
-    // Info con conteggi filtrati vs totali
     let infoText = '';
     if (activeFiltered.length > 0) {
         infoText = `${activeFiltered.length} attive`;
@@ -302,7 +544,6 @@ function renderWorkorders() {
     }
     $('activeInfoText').textContent = infoText;
     
-    // Ordina: prima quelli del centro selezionato
     const sortFn = (a, b) => {
         const aOk = a.workcenter_id?.[0] === state.selectedWorkcenter?.id;
         const bOk = b.workcenter_id?.[0] === state.selectedWorkcenter?.id;
@@ -321,7 +562,8 @@ function renderWorkorders() {
         readyGrid.innerHTML = [...state.workorders.ready].sort(sortFn).map(renderWorkorderCard).join('');
     }
     
-    startElapsedTimers();
+    // Sincronizza timer con i WO attivi visualizzati
+    TimerManager.syncWithWorkorders(state.workorders.active);
 }
 
 function renderSearchResults() {
@@ -349,32 +591,51 @@ function renderSearchResults() {
 }
 
 // ===============================================
-// === SEARCH ====================================
+// === SEARCH (con debounce) =====================
 // ===============================================
 
-let searchTimeout = null;
+// Debounced search - aspetta 300ms dopo l'ultima digitazione
+const debouncedSearch = debounce(async (term) => {
+    try {
+        const result = await RequestManager.execute('search', async () => {
+            const res = await fetch(`/api/workorders/search?q=${encodeURIComponent(term)}`);
+            if (!res.ok) throw new Error();
+            return res.json();
+        });
+        
+        // Se la richiesta è stata cancellata, result è null
+        if (result !== null) {
+            state.searchResults = result;
+            renderSearchResults();
+            showSearchResults();
+        }
+    } catch {
+        showToast('Errore ricerca', 'error');
+    }
+}, 300);
 
 function handleSearchInput() {
     const term = $('searchInput').value.trim();
     $('searchClear').classList.toggle('hidden', term.length === 0);
-    clearTimeout(searchTimeout);
-    if (term.length < 2) { hideSearchResults(); return; }
-    searchTimeout = setTimeout(() => performSearch(term), 300);
-}
-
-async function performSearch(term) {
-    try {
-        const res = await fetch(`/api/workorders/search?q=${encodeURIComponent(term)}`);
-        if (!res.ok) throw new Error();
-        state.searchResults = await res.json();
-        renderSearchResults();
-        showSearchResults();
-    } catch { showToast('Errore ricerca', 'error'); }
+    
+    if (term.length < 2) {
+        RequestManager.cancel('search');
+        hideSearchResults();
+        return;
+    }
+    
+    debouncedSearch(term);
 }
 
 const showSearchResults = () => $('searchResults').classList.remove('hidden');
 const hideSearchResults = () => $('searchResults').classList.add('hidden');
-const clearSearch = () => { $('searchInput').value = ''; $('searchClear').classList.add('hidden'); hideSearchResults(); state.searchResults = []; };
+const clearSearch = () => { 
+    $('searchInput').value = ''; 
+    $('searchClear').classList.add('hidden'); 
+    hideSearchResults(); 
+    state.searchResults = [];
+    RequestManager.cancel('search');
+};
 
 function selectSearchResult(id) {
     const wo = state.searchResults.find(w => w.id === id);
@@ -394,33 +655,69 @@ function switchTab(tab) {
 }
 
 // ===============================================
-// === DATA LOADING ==============================
+// === DATA LOADING (con throttle) ===============
 // ===============================================
 
+// Throttled refresh - al massimo ogni 2 secondi
+const throttledRefresh = throttle(async () => {
+    if (state.selectedWorkcenter) {
+        await loadAllWorkorders();
+    } else {
+        await loadWorkcenters();
+    }
+}, 2000);
+
 async function loadWorkcenters() {
+    if (state.isLoading) return;
+    
     try {
+        setGlobalLoading(true);
         updateConnectionStatus('connecting', 'Connessione...');
-        const test = await fetch('/api/test');
-        if (!test.ok) throw new Error();
-        updateConnectionStatus('connected', 'Connesso');
-        const res = await fetch('/api/workcenters');
-        if (!res.ok) throw new Error();
-        state.workcenters = await res.json();
-        renderWorkcenters();
-    } catch {
+        
+        const result = await RequestManager.execute('workcenters', async () => {
+            const test = await fetch('/api/test');
+            if (!test.ok) throw new Error('Test connessione fallito');
+            
+            const res = await fetch('/api/workcenters');
+            if (!res.ok) throw new Error('Errore caricamento workcenters');
+            return res.json();
+        });
+        
+        if (result !== null) {
+            updateConnectionStatus('connected', 'Connesso');
+            state.workcenters = result;
+            renderWorkcenters();
+        }
+    } catch (e) {
         updateConnectionStatus('error', 'Errore');
         showToast('Connessione fallita', 'error');
         setEmpty($('workcenterGrid'), '⚠️', 'Errore connessione');
+    } finally {
+        setGlobalLoading(false);
     }
 }
 
 async function loadAllWorkorders() {
+    if (state.isLoading) return;
+    
     try {
-        const res = await fetch('/api/workorders');
-        if (!res.ok) throw new Error();
-        state.workorders = await res.json();
-        renderWorkorders();
-    } catch { showToast('Errore caricamento', 'error'); }
+        setGlobalLoading(true);
+        
+        const result = await RequestManager.execute('workorders', async () => {
+            const res = await fetch('/api/workorders');
+            if (!res.ok) throw new Error('Errore caricamento workorders');
+            return res.json();
+        });
+        
+        if (result !== null) {
+            state.workorders = result;
+            renderWorkorders();
+        }
+    } catch {
+        showToast('Errore caricamento', 'error');
+    } finally {
+        setGlobalLoading(false);
+    }
 }
 
 // ===============================================
@@ -431,7 +728,6 @@ async function selectWorkcenter(id) {
     state.selectedWorkcenter = state.workcenters.find(wc => wc.id === id);
     if (!state.selectedWorkcenter) { showToast('Centro non trovato', 'error'); return; }
     
-    // Aggiorna header con nome e badge tipo
     $('selectedWorkcenterName').textContent = state.selectedWorkcenter.name;
     const badge = $('workcenterTypeBadge');
     if (state.selectedWorkcenter.operation_type) {
@@ -456,9 +752,12 @@ async function selectWorkcenter(id) {
 function goBack() {
     state.selectedWorkcenter = null;
     state.workorders = { ready: [], active: [] };
+    
+    // Cleanup completo
     stopAutoRefresh();
-    Object.values(state.elapsedTimers).forEach(t => clearInterval(t));
-    state.elapsedTimers = {};
+    TimerManager.clearAllElapsedTimers();
+    RequestManager.cancel('workorders');
+    
     $('stepWorkorders').classList.add('hidden');
     $('stepWorkcenters').classList.remove('hidden');
     loadWorkcenters();
@@ -485,7 +784,6 @@ function showWorkorderModal(wo) {
     $('modalQty').textContent = wo.qty_remaining || wo.qty_producing || '-';
     $('modalCurrentWorkcenter').textContent = wo.workcenter_id ? wo.workcenter_id[1] : '-';
     
-    // Durata per work order attivi
     const durationRow = $('modalDurationRow');
     if (wo.state === 'progress' && wo.date_start) {
         durationRow.classList.remove('hidden');
@@ -498,7 +796,6 @@ function showWorkorderModal(wo) {
     const needsReassign = state.selectedWorkcenter && wcId !== state.selectedWorkcenter.id;
     const compatible = isCompatible(wo, state.selectedWorkcenter);
     
-    // Warning riassegnazione (giallo)
     const reassignWarning = $('modalWorkcenterWarning');
     if (needsReassign) {
         reassignWarning.classList.remove('hidden');
@@ -507,7 +804,6 @@ function showWorkorderModal(wo) {
         reassignWarning.classList.add('hidden');
     }
     
-    // Warning INCOMPATIBILITÀ (rosso)
     const incompatWarning = $('modalIncompatibleWarning');
     if (!compatible && state.selectedWorkcenter) {
         incompatWarning.classList.remove('hidden');
@@ -517,7 +813,6 @@ function showWorkorderModal(wo) {
         incompatWarning.classList.add('hidden');
     }
     
-    // Pulsanti
     const actions = $('modalActions');
     if (wo.state === 'ready') {
         const btnClass = compatible ? 'btn-success' : 'btn-danger';
@@ -525,30 +820,37 @@ function showWorkorderModal(wo) {
         actions.innerHTML = `
             <button class="btn btn-secondary" onclick="closeModal()">Annulla</button>
             <button class="btn btn-info" onclick="showDetails(${wo.id})">📋 Dettagli</button>
-            <button class="btn ${btnClass}" onclick="confirmStart()">${btnText}</button>
+            <button class="btn ${btnClass}" id="btnConfirmStart" onclick="confirmStart()">${btnText}</button>
         `;
     } else if (wo.state === 'progress') {
         actions.innerHTML = `
             <button class="btn btn-secondary" onclick="closeModal()">Annulla</button>
             <button class="btn btn-info" onclick="showDetails(${wo.id})">📋 Dettagli</button>
-            <button class="btn btn-warning" onclick="confirmPause()">⏸️ Pausa</button>
-            <button class="btn btn-success" onclick="confirmComplete()">✅ Completa</button>
+            <button class="btn btn-warning" id="btnConfirmPause" onclick="confirmPause()">⏸️ Pausa</button>
+            <button class="btn btn-success" id="btnConfirmComplete" onclick="confirmComplete()">✅ Completa</button>
         `;
     }
     
     $('modalOverlay').classList.remove('hidden');
 }
 
-const closeModal = () => { $('modalOverlay').classList.add('hidden'); state.selectedWorkorder = null; };
+const closeModal = () => { 
+    $('modalOverlay').classList.add('hidden'); 
+    state.selectedWorkorder = null; 
+    state.isActionInProgress = false;
+};
 
 // ===============================================
-// === ACTIONS ===================================
+// === ACTIONS (con protezione doppio click) =====
 // ===============================================
 
 async function confirmStart() {
-    if (!state.selectedWorkorder) return;
+    if (!state.selectedWorkorder || state.isActionInProgress) return;
+    
+    state.isActionInProgress = true;
     const wo = state.selectedWorkorder;
-    const btn = $('modalActions').querySelector('.btn-success, .btn-danger');
+    const btn = $('btnConfirmStart');
+    const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Avvio...';
     
@@ -570,16 +872,20 @@ async function confirmStart() {
         await loadAllWorkorders();
     } catch (e) {
         showToast(`Errore: ${e.message}`, 'error');
-    } finally {
         btn.disabled = false;
+        btn.textContent = originalText;
+        state.isActionInProgress = false;
     }
 }
 
 async function confirmPause() {
-    if (!state.selectedWorkorder) return;
+    if (!state.selectedWorkorder || state.isActionInProgress) return;
+    
+    state.isActionInProgress = true;
     const wo = state.selectedWorkorder;
-    const btn = $('modalActions').querySelector('.btn-warning');
+    const btn = $('btnConfirmPause');
     btn.disabled = true;
+    btn.textContent = 'Pausa...';
     
     try {
         const res = await fetch(`/api/workorders/${wo.id}/pause`, { method: 'POST' });
@@ -589,16 +895,20 @@ async function confirmPause() {
         await loadAllWorkorders();
     } catch (e) {
         showToast(`Errore: ${e.message}`, 'error');
-    } finally {
         btn.disabled = false;
+        btn.textContent = '⏸️ Pausa';
+        state.isActionInProgress = false;
     }
 }
 
 async function confirmComplete() {
-    if (!state.selectedWorkorder) return;
+    if (!state.selectedWorkorder || state.isActionInProgress) return;
+    
+    state.isActionInProgress = true;
     const wo = state.selectedWorkorder;
-    const btn = $('modalActions').querySelectorAll('.btn-success')[0];
+    const btn = $('btnConfirmComplete');
     btn.disabled = true;
+    btn.textContent = 'Completo...';
     
     try {
         const res = await fetch(`/api/workorders/${wo.id}/complete`, { method: 'POST' });
@@ -608,8 +918,9 @@ async function confirmComplete() {
         await loadAllWorkorders();
     } catch (e) {
         showToast(`Errore: ${e.message}`, 'error');
-    } finally {
         btn.disabled = false;
+        btn.textContent = '✅ Completa';
+        state.isActionInProgress = false;
     }
 }
 
@@ -684,10 +995,14 @@ function toggleCompactView() {
 // ===============================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Inizializza TimerManager
+    TimerManager.init();
+    
     loadSettings();
     loadWorkcenters();
     
-    $('btnRefresh').addEventListener('click', () => state.selectedWorkcenter ? loadAllWorkorders() : loadWorkcenters());
+    // Usa throttledRefresh per il pulsante refresh
+    $('btnRefresh').addEventListener('click', throttledRefresh);
     $('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
     $('refreshInterval').addEventListener('change', changeRefreshInterval);
     $('btnToggleTheme').addEventListener('click', toggleTheme);
