@@ -42,15 +42,15 @@ app.get('/api/workcenters', async (req, res) => {
 
 // ----------------------------------------------
 // GET /api/workorders/:workcenterId
-// Recupera work orders "ready" per un centro di lavoro
+// Recupera tutti i work orders (ready + active) per un centro di lavoro
 // ----------------------------------------------
 app.get('/api/workorders/:workcenterId', async (req, res) => {
     try {
         const workcenterId = parseInt(req.params.workcenterId);
         console.log(`[API] Richiesta work orders per workcenter ID: ${workcenterId}`);
         
-        const workorders = await odooApi.getReadyWorkorders(workcenterId);
-        console.log(`[API] Trovati ${workorders.length} work orders pronti`);
+        const workorders = await odooApi.getWorkordersForWorkcenter(workcenterId);
+        console.log(`[API] Trovati ${workorders.ready.length} pronti, ${workorders.active.length} attivi`);
         res.json(workorders);
     } catch (error) {
         console.error('[API] Errore recupero workorders:', error.message);
@@ -59,17 +59,44 @@ app.get('/api/workorders/:workcenterId', async (req, res) => {
 });
 
 // ----------------------------------------------
+// GET /api/workorders/search?q=termine
+// Cerca work orders per nome/prodotto (tutti i centri)
+// ----------------------------------------------
+app.get('/api/workorders/search', async (req, res) => {
+    try {
+        const searchTerm = req.query.q || '';
+        console.log(`[API] Ricerca work orders: "${searchTerm}"`);
+        
+        if (searchTerm.length < 2) {
+            return res.json([]);
+        }
+        
+        const workorders = await odooApi.searchWorkorders(searchTerm);
+        console.log(`[API] Trovati ${workorders.length} work orders`);
+        res.json(workorders);
+    } catch (error) {
+        console.error('[API] Errore ricerca workorders:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ----------------------------------------------
 // POST /api/workorders/:workorderId/start
 // Avvia un work order (porta da ready a progress)
+// Body opzionale: { targetWorkcenterId: number }
+// Se targetWorkcenterId è diverso dal workcenter attuale,
+// prima riassegna il work order al nuovo centro
 // ----------------------------------------------
 app.post('/api/workorders/:workorderId/start', async (req, res) => {
     try {
         const workorderId = parseInt(req.params.workorderId);
-        console.log(`[API] Avvio work order ID: ${workorderId}`);
+        const targetWorkcenterId = req.body.targetWorkcenterId ? parseInt(req.body.targetWorkcenterId) : null;
         
-        const result = await odooApi.startWorkorder(workorderId);
+        console.log(`[API] Avvio work order ID: ${workorderId}, target workcenter: ${targetWorkcenterId || 'nessuno'}`);
+        
+        const result = await odooApi.startWorkorder(workorderId, targetWorkcenterId);
         console.log(`[API] Work order ${workorderId} avviato con successo`);
-        res.json({ success: true, result });
+        res.json({ success: true, ...result });
     } catch (error) {
         console.error('[API] Errore avvio workorder:', error.message);
         res.status(500).json({ error: error.message });

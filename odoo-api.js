@@ -141,11 +141,23 @@ async function getWorkcenters() {
     return workcenters;
 }
 
+// --- Campi standard per i work orders ---
+const WORKORDER_FIELDS = [
+    'id',
+    'name',
+    'display_name',
+    'production_id',    // Ordine di produzione padre
+    'product_id',       // Prodotto da realizzare
+    'workcenter_id',    // Centro di lavoro assegnato
+    'qty_producing',    // Quantità in produzione
+    'qty_produced',     // Quantità già prodotta
+    'qty_remaining',    // Quantità rimanente
+    'state',
+    'duration_expected' // Durata prevista in minuti
+];
+
 /**
  * Recupera work orders pronti per un centro di lavoro
- * In Odoo 17+ i campi date sono cambiati:
- * - date_planned_start -> date_start (o scheduled_date_start)
- * - date_planned_finished -> date_finished
  * @param {number} workcenterId - ID del centro di lavoro
  * @returns {Promise<Array>} Lista di work orders in stato 'ready'
  */
@@ -157,25 +169,82 @@ async function getReadyWorkorders(workcenterId) {
         'search_read',
         [[
             ['workcenter_id', '=', workcenterId],
-            ['state', '=', 'ready'] // Solo ordini pronti
+            ['state', '=', 'ready']
         ]],
         {
-            // Campi compatibili con Odoo 17+
-            // Rimuoviamo i campi date problematici per ora
-            fields: [
-                'id',
-                'name',
-                'display_name',
-                'production_id',    // Ordine di produzione padre
-                'product_id',       // Prodotto da realizzare
-                'qty_producing',    // Quantità in produzione
-                'qty_produced',     // Quantità già prodotta
-                'qty_remaining',    // Quantità rimanente
-                'state',
-                'duration_expected' // Durata prevista in minuti
-            ],
-            // Ordiniamo solo per ID per evitare errori su campi non esistenti
+            fields: WORKORDER_FIELDS,
             order: 'id'
+        }
+    );
+
+    return workorders;
+}
+
+/**
+ * Recupera work orders attivi (in progress) per un centro di lavoro
+ * @param {number} workcenterId - ID del centro di lavoro
+ * @returns {Promise<Array>} Lista di work orders in stato 'progress'
+ */
+async function getActiveWorkorders(workcenterId) {
+    console.log(`[ODOO] Recupero work orders attivi per workcenter ${workcenterId}...`);
+    
+    const workorders = await executeKw(
+        'mrp.workorder',
+        'search_read',
+        [[
+            ['workcenter_id', '=', workcenterId],
+            ['state', '=', 'progress']
+        ]],
+        {
+            fields: WORKORDER_FIELDS,
+            order: 'id'
+        }
+    );
+
+    return workorders;
+}
+
+/**
+ * Recupera tutti i work orders per un centro di lavoro (ready + progress)
+ * @param {number} workcenterId - ID del centro di lavoro
+ * @returns {Promise<Object>} Oggetto con { ready: [...], active: [...] }
+ */
+async function getWorkordersForWorkcenter(workcenterId) {
+    console.log(`[ODOO] Recupero tutti i work orders per workcenter ${workcenterId}...`);
+    
+    const [ready, active] = await Promise.all([
+        getReadyWorkorders(workcenterId),
+        getActiveWorkorders(workcenterId)
+    ]);
+    
+    return { ready, active };
+}
+
+/**
+ * Cerca work orders per nome/prodotto (tutti i centri di lavoro)
+ * @param {string} searchTerm - Termine di ricerca
+ * @param {number} limit - Numero massimo di risultati (default 50)
+ * @returns {Promise<Array>} Lista di work orders che matchano la ricerca
+ */
+async function searchWorkorders(searchTerm, limit = 50) {
+    console.log(`[ODOO] Ricerca work orders: "${searchTerm}"...`);
+    
+    // Cerco nei work orders in stato ready o progress
+    // Il termine può essere nel nome del workorder, del prodotto o della produzione
+    const workorders = await executeKw(
+        'mrp.workorder',
+        'search_read',
+        [[
+            ['state', 'in', ['ready', 'progress']],
+            '|', '|',
+            ['name', 'ilike', searchTerm],
+            ['display_name', 'ilike', searchTerm],
+            ['product_id.name', 'ilike', searchTerm]
+        ]],
+        {
+            fields: WORKORDER_FIELDS,
+            order: 'state desc, id', // Prima i progress, poi i ready
+            limit: limit
         }
     );
 
@@ -185,35 +254,74 @@ async function getReadyWorkorders(workcenterId) {
 /**
  * Recupera lo stato attuale di un work order
  * @param {number} workorderId - ID del work order
- * @returns {Promise<string>} Stato del work order
+ * @returns {Promise<Object>} Work order con stato e workcenter
  */
-async function getWorkorderState(workorderId) {
+async function getWorkorderInfo(workorderId) {
     const result = await executeKw(
         'mrp.workorder',
         'search_read',
         [[['id', '=', workorderId]]],
-        { fields: ['state'] }
+        { fields: ['state', 'workcenter_id'] }
     );
     
-    return result.length > 0 ? result[0].state : null;
+    return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Cambia il centro di lavoro di un work order
+ * @param {number} workorderId - ID del work order
+ * @param {number} newWorkcenterId - ID del nuovo centro di lavoro
+ * @returns {Promise<boolean>} true se l'operazione è riuscita
+ */
+async function changeWorkcenter(workorderId, newWorkcenterId) {
+    console.log(`[ODOO] Cambio workcenter per work order ${workorderId} -> ${newWorkcenterId}...`);
+    
+    const result = await executeKw(
+        'mrp.workorder',
+        'write',
+        [[workorderId], { workcenter_id: newWorkcenterId }]
+    );
+    
+    console.log(`[ODOO] Workcenter cambiato per work order ${workorderId}`);
+    return result;
 }
 
 /**
  * Avvia un work order (porta da 'ready' a 'progress')
- * Chiama il metodo button_start di Odoo
- * 
- * NOTA: button_start ritorna None che causa un errore XML-RPC
- * Questo viene gestito in executeKw, quindi l'errore è atteso
+ * Se il work order è assegnato a un altro centro, prima lo riassegna
  * 
  * @param {number} workorderId - ID del work order da avviare
- * @returns {Promise<Object>} Oggetto con success e newState
+ * @param {number} targetWorkcenterId - ID del centro di lavoro target (opzionale)
+ * @returns {Promise<Object>} Oggetto con success, newState, workcenterChanged
  */
-async function startWorkorder(workorderId) {
+async function startWorkorder(workorderId, targetWorkcenterId = null) {
     console.log(`[ODOO] Avvio work order ${workorderId}...`);
     
+    // Recupero info sul work order
+    const workorderInfo = await getWorkorderInfo(workorderId);
+    if (!workorderInfo) {
+        throw new Error(`Work order ${workorderId} non trovato`);
+    }
+    
+    let workcenterChanged = false;
+    const currentWorkcenterId = workorderInfo.workcenter_id ? workorderInfo.workcenter_id[0] : null;
+    
+    // Se è specificato un target workcenter diverso da quello attuale, cambio
+    if (targetWorkcenterId && currentWorkcenterId !== targetWorkcenterId) {
+        console.log(`[ODOO] Work order ${workorderId} è su workcenter ${currentWorkcenterId}, cambio a ${targetWorkcenterId}`);
+        await changeWorkcenter(workorderId, targetWorkcenterId);
+        workcenterChanged = true;
+    }
+    
     // Salvo lo stato prima dell'operazione
-    const stateBefore = await getWorkorderState(workorderId);
+    const stateBefore = workorderInfo.state;
     console.log(`[ODOO] Stato prima: ${stateBefore}`);
+    
+    // Se è già in progress, non faccio nulla
+    if (stateBefore === 'progress') {
+        console.log(`[ODOO] Work order ${workorderId} è già in progress`);
+        return { success: true, newState: 'progress', workcenterChanged, alreadyStarted: true };
+    }
     
     // Chiamo button_start - potrebbe "fallire" con None ma funziona
     try {
@@ -224,7 +332,6 @@ async function startWorkorder(workorderId) {
         );
     } catch (error) {
         // Se l'errore è "cannot marshal None", ignoriamo
-        // L'operazione è andata a buon fine
         if (!error.message || !error.message.includes('cannot marshal None')) {
             throw error;
         }
@@ -232,19 +339,19 @@ async function startWorkorder(workorderId) {
     }
     
     // Verifico lo stato dopo l'operazione
-    const stateAfter = await getWorkorderState(workorderId);
+    const updatedInfo = await getWorkorderInfo(workorderId);
+    const stateAfter = updatedInfo ? updatedInfo.state : null;
     console.log(`[ODOO] Stato dopo: ${stateAfter}`);
     
     // Verifico che lo stato sia cambiato a 'progress'
     if (stateAfter === 'progress') {
         console.log(`[ODOO] Work order ${workorderId} avviato con successo`);
-        return { success: true, newState: stateAfter };
+        return { success: true, newState: stateAfter, workcenterChanged };
     } else if (stateAfter === stateBefore) {
         throw new Error(`Lo stato non è cambiato (rimasto: ${stateAfter})`);
     } else {
-        // Stato diverso ma non 'progress' - potrebbe essere ok
         console.log(`[ODOO] Work order ${workorderId} stato cambiato a: ${stateAfter}`);
-        return { success: true, newState: stateAfter };
+        return { success: true, newState: stateAfter, workcenterChanged };
     }
 }
 
@@ -255,6 +362,10 @@ module.exports = {
     testConnection,
     getWorkcenters,
     getReadyWorkorders,
+    getActiveWorkorders,
+    getWorkordersForWorkcenter,
+    searchWorkorders,
     startWorkorder,
-    getWorkorderState
+    changeWorkcenter,
+    getWorkorderInfo
 };

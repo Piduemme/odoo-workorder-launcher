@@ -3,13 +3,19 @@
 // ===============================================
 // Gestisce l'interfaccia utente e le chiamate API
 // Flusso: Selezione workcenter → Lista workorders → Avvio
+// Include ricerca globale e riassegnazione workcenter
 
 // --- STATO APPLICAZIONE ---
 const state = {
     workcenters: [],           // Lista centri di lavoro
     selectedWorkcenter: null,  // Centro di lavoro selezionato
-    workorders: [],            // Work orders del centro selezionato
-    selectedWorkorder: null    // Work order da avviare (per modal)
+    workorders: {              // Work orders del centro selezionato
+        ready: [],
+        active: []
+    },
+    selectedWorkorder: null,   // Work order da avviare (per modal)
+    searchResults: [],         // Risultati ricerca
+    activeTab: 'active'        // Tab attivo: 'active' o 'ready'
 };
 
 // --- ELEMENTI DOM ---
@@ -19,21 +25,40 @@ const elements = {
     statusDot: null,
     statusText: null,
     
+    // Ricerca
+    searchInput: document.getElementById('searchInput'),
+    searchClear: document.getElementById('searchClear'),
+    searchResults: document.getElementById('searchResults'),
+    searchResultsList: document.getElementById('searchResultsList'),
+    btnCloseSearch: document.getElementById('btnCloseSearch'),
+    
     // Sezioni
     stepWorkcenters: document.getElementById('stepWorkcenters'),
     stepWorkorders: document.getElementById('stepWorkorders'),
     
     // Griglie
     workcenterGrid: document.getElementById('workcenterGrid'),
-    workorderGrid: document.getElementById('workorderGrid'),
+    activeWorkorderGrid: document.getElementById('activeWorkorderGrid'),
+    readyWorkorderGrid: document.getElementById('readyWorkorderGrid'),
     
     // Header workorders
     selectedWorkcenterName: document.getElementById('selectedWorkcenterName'),
     btnBack: document.getElementById('btnBack'),
     
+    // Tabs
+    tabActive: document.getElementById('tabActive'),
+    tabReady: document.getElementById('tabReady'),
+    tabContentActive: document.getElementById('tabContentActive'),
+    tabContentReady: document.getElementById('tabContentReady'),
+    countActive: document.getElementById('countActive'),
+    countReady: document.getElementById('countReady'),
+    
     // Modal
     modalOverlay: document.getElementById('modalOverlay'),
     modalWorkorderName: document.getElementById('modalWorkorderName'),
+    modalWorkcenterWarning: document.getElementById('modalWorkcenterWarning'),
+    modalCurrentWorkcenter: document.getElementById('modalCurrentWorkcenter'),
+    modalTargetWorkcenter: document.getElementById('modalTargetWorkcenter'),
     btnCancel: document.getElementById('btnCancel'),
     btnConfirm: document.getElementById('btnConfirm'),
     
@@ -87,23 +112,6 @@ function showToast(message, type = 'info') {
 }
 
 /**
- * Formatta una data ISO in formato leggibile
- * @param {string} isoDate - Data in formato ISO
- * @returns {string} Data formattata
- */
-function formatDate(isoDate) {
-    if (!isoDate) return '-';
-    
-    const date = new Date(isoDate);
-    return date.toLocaleDateString('it-IT', {
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-/**
  * Formatta la durata da minuti a ore:minuti
  * @param {number} minutes - Durata in minuti
  * @returns {string} Durata formattata (es. "2h 30m")
@@ -118,6 +126,16 @@ function formatDuration(minutes) {
     return `${mins}m`;
 }
 
+/**
+ * Escape HTML per prevenire XSS
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // ===============================================
 // === RENDER FUNCTIONS ==========================
 // ===============================================
@@ -126,7 +144,6 @@ function formatDuration(minutes) {
  * Renderizza la griglia dei centri di lavoro
  */
 function renderWorkcenters() {
-    // Se non ci sono workcenters, mostra stato vuoto
     if (state.workcenters.length === 0) {
         elements.workcenterGrid.innerHTML = `
             <div class="empty-state">
@@ -137,7 +154,6 @@ function renderWorkcenters() {
         return;
     }
     
-    // Genera HTML per ogni workcenter
     const html = state.workcenters.map(wc => `
         <div class="workcenter-card" 
              data-id="${wc.id}" 
@@ -152,57 +168,211 @@ function renderWorkcenters() {
 }
 
 /**
- * Renderizza la griglia dei work orders
+ * Renderizza una card work order
+ * @param {Object} wo - Work order
+ * @param {boolean} showWorkcenter - Se mostrare il nome del workcenter
+ */
+function renderWorkorderCard(wo, showWorkcenter = false) {
+    const productName = wo.product_id ? wo.product_id[1] : '-';
+    const workcenterName = wo.workcenter_id ? wo.workcenter_id[1] : '-';
+    const isOtherWorkcenter = state.selectedWorkcenter && 
+        wo.workcenter_id && 
+        wo.workcenter_id[0] !== state.selectedWorkcenter.id;
+    
+    const cardClasses = ['workorder-card'];
+    if (wo.state === 'progress') cardClasses.push('active');
+    if (isOtherWorkcenter) cardClasses.push('other-workcenter');
+    
+    return `
+        <div class="${cardClasses.join(' ')}" 
+             data-id="${wo.id}"
+             onclick="selectWorkorder(${wo.id}, '${wo.state}')">
+            <div class="card-header">
+                <div class="card-name">${escapeHtml(wo.display_name || wo.name)}</div>
+                <div class="card-product">📦 ${escapeHtml(productName)}</div>
+                ${showWorkcenter ? `<div class="card-workcenter">🏭 ${escapeHtml(workcenterName)}</div>` : ''}
+            </div>
+            <div class="card-details">
+                <div class="card-qty">
+                    📊 Qtà: ${wo.qty_remaining || wo.qty_producing || '-'}
+                </div>
+                <div class="card-duration">
+                    ⏱️ Durata: ${formatDuration(wo.duration_expected)}
+                </div>
+            </div>
+            <span class="card-state ${wo.state}">${wo.state === 'progress' ? 'In corso' : 'Pronto'}</span>
+        </div>
+    `;
+}
+
+/**
+ * Renderizza i work orders nelle tab
  */
 function renderWorkorders() {
-    // Se non ci sono workorders, mostra stato vuoto
-    if (state.workorders.length === 0) {
-        elements.workorderGrid.innerHTML = `
+    // Aggiorna contatori
+    elements.countActive.textContent = state.workorders.active.length;
+    elements.countReady.textContent = state.workorders.ready.length;
+    
+    // Tab Attivi
+    if (state.workorders.active.length === 0) {
+        elements.activeWorkorderGrid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">✨</div>
+                <p>Nessuna lavorazione attiva</p>
+            </div>
+        `;
+    } else {
+        elements.activeWorkorderGrid.innerHTML = state.workorders.active
+            .map(wo => renderWorkorderCard(wo))
+            .join('');
+    }
+    
+    // Tab Pronti
+    if (state.workorders.ready.length === 0) {
+        elements.readyWorkorderGrid.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">📋</div>
-                <p>Nessun ordine di lavoro pronto per questo centro</p>
+                <p>Nessun ordine di lavoro pronto</p>
+            </div>
+        `;
+    } else {
+        elements.readyWorkorderGrid.innerHTML = state.workorders.ready
+            .map(wo => renderWorkorderCard(wo))
+            .join('');
+    }
+}
+
+/**
+ * Renderizza i risultati della ricerca
+ */
+function renderSearchResults() {
+    if (state.searchResults.length === 0) {
+        elements.searchResultsList.innerHTML = `
+            <div class="empty-state" style="padding: 20px;">
+                <p>Nessun risultato trovato</p>
             </div>
         `;
         return;
     }
     
-    // Genera HTML per ogni workorder
-    const html = state.workorders.map(wo => {
-        // Estrai nome prodotto (è un array [id, name])
+    const html = state.searchResults.map(wo => {
         const productName = wo.product_id ? wo.product_id[1] : '-';
-        const productionName = wo.production_id ? wo.production_id[1] : '-';
+        const workcenterName = wo.workcenter_id ? wo.workcenter_id[1] : '-';
         
         return `
-            <div class="workorder-card" 
-                 data-id="${wo.id}"
-                 onclick="selectWorkorder(${wo.id})">
-                <div class="card-header">
-                    <div class="card-name">${escapeHtml(wo.display_name || wo.name)}</div>
-                    <div class="card-product">📦 ${escapeHtml(productName)}</div>
-                </div>
-                <div class="card-details">
-                    <div class="card-qty">
-                        📊 Qtà: ${wo.qty_remaining || wo.qty_producing || '-'}
-                    </div>
-                    <div class="card-duration">
-                        ⏱️ Durata: ${formatDuration(wo.duration_expected)}
-                    </div>
+            <div class="search-result-item" onclick="selectSearchResult(${wo.id})">
+                <div class="search-result-name">${escapeHtml(wo.display_name || wo.name)}</div>
+                <div class="search-result-details">
+                    <span>📦 ${escapeHtml(productName)}</span>
+                    <span class="search-result-workcenter">🏭 ${escapeHtml(workcenterName)}</span>
+                    <span class="search-result-state ${wo.state}">${wo.state === 'progress' ? 'In corso' : 'Pronto'}</span>
                 </div>
             </div>
         `;
     }).join('');
     
-    elements.workorderGrid.innerHTML = html;
+    elements.searchResultsList.innerHTML = html;
+}
+
+// ===============================================
+// === SEARCH FUNCTIONS ==========================
+// ===============================================
+
+let searchTimeout = null;
+
+/**
+ * Gestisce l'input nella barra di ricerca
+ */
+function handleSearchInput() {
+    const term = elements.searchInput.value.trim();
+    
+    // Mostra/nascondi pulsante clear
+    elements.searchClear.classList.toggle('hidden', term.length === 0);
+    
+    // Aspetta che l'utente finisca di digitare
+    clearTimeout(searchTimeout);
+    
+    if (term.length < 2) {
+        hideSearchResults();
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => performSearch(term), 300);
 }
 
 /**
- * Escape HTML per prevenire XSS
+ * Esegue la ricerca
  */
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+async function performSearch(term) {
+    try {
+        const response = await fetch(`/api/workorders/search?q=${encodeURIComponent(term)}`);
+        if (!response.ok) throw new Error('Errore ricerca');
+        
+        state.searchResults = await response.json();
+        renderSearchResults();
+        showSearchResults();
+        
+    } catch (error) {
+        console.error('Errore ricerca:', error);
+        showToast('Errore nella ricerca', 'error');
+    }
+}
+
+/**
+ * Mostra il dropdown dei risultati
+ */
+function showSearchResults() {
+    elements.searchResults.classList.remove('hidden');
+}
+
+/**
+ * Nasconde il dropdown dei risultati
+ */
+function hideSearchResults() {
+    elements.searchResults.classList.add('hidden');
+}
+
+/**
+ * Pulisce la ricerca
+ */
+function clearSearch() {
+    elements.searchInput.value = '';
+    elements.searchClear.classList.add('hidden');
+    hideSearchResults();
+    state.searchResults = [];
+}
+
+/**
+ * Seleziona un risultato dalla ricerca
+ */
+function selectSearchResult(workorderId) {
+    const wo = state.searchResults.find(w => w.id === workorderId);
+    if (!wo) return;
+    
+    hideSearchResults();
+    
+    // Apri il modal per questo work order
+    state.selectedWorkorder = wo;
+    showWorkorderModal(wo);
+}
+
+// ===============================================
+// === TABS FUNCTIONS ============================
+// ===============================================
+
+/**
+ * Cambia tab attivo
+ */
+function switchTab(tabName) {
+    state.activeTab = tabName;
+    
+    // Aggiorna classi tab
+    elements.tabActive.classList.toggle('active', tabName === 'active');
+    elements.tabReady.classList.toggle('active', tabName === 'ready');
+    
+    // Mostra/nascondi contenuto
+    elements.tabContentActive.classList.toggle('hidden', tabName !== 'active');
+    elements.tabContentReady.classList.toggle('hidden', tabName !== 'ready');
 }
 
 // ===============================================
@@ -211,10 +381,8 @@ function escapeHtml(text) {
 
 /**
  * Seleziona un centro di lavoro e carica i suoi work orders
- * @param {number} workcenterId - ID del workcenter
  */
 async function selectWorkcenter(workcenterId) {
-    // Trova il workcenter selezionato
     state.selectedWorkcenter = state.workcenters.find(wc => wc.id === workcenterId);
     
     if (!state.selectedWorkcenter) {
@@ -222,41 +390,39 @@ async function selectWorkcenter(workcenterId) {
         return;
     }
     
-    // Aggiorna UI
     elements.selectedWorkcenterName.textContent = state.selectedWorkcenter.name;
     
     // Mostra loading
-    elements.workorderGrid.innerHTML = `
+    elements.activeWorkorderGrid.innerHTML = `
         <div class="loading-placeholder">
             <div class="spinner"></div>
-            <p>Caricamento ordini di lavoro...</p>
+            <p>Caricamento...</p>
         </div>
     `;
+    elements.readyWorkorderGrid.innerHTML = elements.activeWorkorderGrid.innerHTML;
     
-    // Mostra sezione workorders, nascondi workcenters
+    // Mostra sezione workorders
     elements.stepWorkcenters.classList.add('hidden');
     elements.stepWorkorders.classList.remove('hidden');
     
     // Carica work orders
     try {
         const response = await fetch(`/api/workorders/${workcenterId}`);
-        
-        if (!response.ok) {
-            throw new Error('Errore nel caricamento');
-        }
+        if (!response.ok) throw new Error('Errore nel caricamento');
         
         state.workorders = await response.json();
         renderWorkorders();
         
+        // Se ci sono attivi, mostra quella tab, altrimenti mostra pronti
+        if (state.workorders.active.length > 0) {
+            switchTab('active');
+        } else {
+            switchTab('ready');
+        }
+        
     } catch (error) {
         console.error('Errore caricamento workorders:', error);
         showToast('Errore nel caricamento degli ordini', 'error');
-        elements.workorderGrid.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">⚠️</div>
-                <p>Errore nel caricamento</p>
-            </div>
-        `;
     }
 }
 
@@ -265,33 +431,66 @@ async function selectWorkcenter(workcenterId) {
  */
 function goBack() {
     state.selectedWorkcenter = null;
-    state.workorders = [];
+    state.workorders = { ready: [], active: [] };
     
     elements.stepWorkorders.classList.add('hidden');
     elements.stepWorkcenters.classList.remove('hidden');
 }
 
 /**
- * Seleziona un work order e mostra modal di conferma
- * @param {number} workorderId - ID del workorder
+ * Mostra il modal per un work order
  */
-function selectWorkorder(workorderId) {
-    state.selectedWorkorder = state.workorders.find(wo => wo.id === workorderId);
+function showWorkorderModal(wo) {
+    elements.modalWorkorderName.textContent = wo.display_name || wo.name;
     
-    if (!state.selectedWorkorder) {
-        showToast('Ordine di lavoro non trovato', 'error');
-        return;
+    // Controlla se il workcenter è diverso da quello selezionato
+    const currentWcId = wo.workcenter_id ? wo.workcenter_id[0] : null;
+    const currentWcName = wo.workcenter_id ? wo.workcenter_id[1] : '-';
+    const targetWcName = state.selectedWorkcenter ? state.selectedWorkcenter.name : '-';
+    
+    const needsReassignment = state.selectedWorkcenter && currentWcId !== state.selectedWorkcenter.id;
+    
+    if (needsReassignment) {
+        elements.modalWorkcenterWarning.classList.remove('hidden');
+        elements.modalCurrentWorkcenter.textContent = currentWcName;
+        elements.modalTargetWorkcenter.textContent = targetWcName;
+    } else {
+        elements.modalWorkcenterWarning.classList.add('hidden');
     }
-    
-    // Aggiorna modal
-    elements.modalWorkorderName.textContent = state.selectedWorkorder.display_name || state.selectedWorkorder.name;
     
     // Mostra modal
     elements.modalOverlay.classList.remove('hidden');
 }
 
 /**
- * Chiude il modal di conferma
+ * Seleziona un work order dalla griglia
+ */
+function selectWorkorder(workorderId, currentState) {
+    // Cerca il work order nei dati
+    let wo = state.workorders.ready.find(w => w.id === workorderId) ||
+             state.workorders.active.find(w => w.id === workorderId) ||
+             state.searchResults.find(w => w.id === workorderId);
+    
+    if (!wo) {
+        showToast('Ordine di lavoro non trovato', 'error');
+        return;
+    }
+    
+    // Se è già in progress e nel workcenter giusto, non fare nulla
+    if (wo.state === 'progress' && 
+        state.selectedWorkcenter && 
+        wo.workcenter_id && 
+        wo.workcenter_id[0] === state.selectedWorkcenter.id) {
+        showToast('Questa lavorazione è già attiva', 'warning');
+        return;
+    }
+    
+    state.selectedWorkorder = wo;
+    showWorkorderModal(wo);
+}
+
+/**
+ * Chiude il modal
  */
 function closeModal() {
     elements.modalOverlay.classList.add('hidden');
@@ -299,24 +498,23 @@ function closeModal() {
 }
 
 /**
- * Conferma e avvia il work order selezionato
+ * Conferma e avvia il work order
  */
 async function confirmStart() {
     if (!state.selectedWorkorder) return;
     
     const workorderId = state.selectedWorkorder.id;
     const workorderName = state.selectedWorkorder.display_name || state.selectedWorkorder.name;
+    const targetWorkcenterId = state.selectedWorkcenter ? state.selectedWorkcenter.id : null;
     
-    // Disabilita pulsante durante l'operazione
     elements.btnConfirm.disabled = true;
     elements.btnConfirm.textContent = 'Avvio...';
     
     try {
         const response = await fetch(`/api/workorders/${workorderId}/start`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ targetWorkcenterId })
         });
         
         if (!response.ok) {
@@ -324,14 +522,22 @@ async function confirmStart() {
             throw new Error(errorData.error || 'Errore durante l\'avvio');
         }
         
-        // Successo!
-        showToast(`✓ Lavorazione avviata: ${workorderName}`, 'success');
+        const result = await response.json();
         
-        // Chiudi modal
+        // Messaggio di successo
+        let message = `✓ Lavorazione avviata: ${workorderName}`;
+        if (result.workcenterChanged) {
+            message += ` (riassegnato a ${state.selectedWorkcenter.name})`;
+        }
+        showToast(message, 'success');
+        
         closeModal();
+        clearSearch();
         
-        // Ricarica la lista (il work order avviato non sarà più "ready")
-        await selectWorkcenter(state.selectedWorkcenter.id);
+        // Ricarica i work orders
+        if (state.selectedWorkcenter) {
+            await selectWorkcenter(state.selectedWorkcenter.id);
+        }
         
     } catch (error) {
         console.error('Errore avvio workorder:', error);
@@ -346,26 +552,17 @@ async function confirmStart() {
 // === INIZIALIZZAZIONE ==========================
 // ===============================================
 
-/**
- * Carica i centri di lavoro all'avvio
- */
 async function loadWorkcenters() {
     try {
         updateConnectionStatus('connecting', 'Connessione a Odoo...');
         
-        // Prima testa la connessione
         const testResponse = await fetch('/api/test');
-        if (!testResponse.ok) {
-            throw new Error('Connessione a Odoo fallita');
-        }
+        if (!testResponse.ok) throw new Error('Connessione a Odoo fallita');
         
         updateConnectionStatus('connected', 'Connesso');
         
-        // Poi carica i workcenters
         const response = await fetch('/api/workcenters');
-        if (!response.ok) {
-            throw new Error('Errore nel caricamento');
-        }
+        if (!response.ok) throw new Error('Errore nel caricamento');
         
         state.workcenters = await response.json();
         renderWorkcenters();
@@ -386,14 +583,31 @@ async function loadWorkcenters() {
 }
 
 // --- EVENT LISTENERS ---
+
+// Navigazione
 elements.btnBack.addEventListener('click', goBack);
+
+// Tabs
+elements.tabActive.addEventListener('click', () => switchTab('active'));
+elements.tabReady.addEventListener('click', () => switchTab('ready'));
+
+// Modal
 elements.btnCancel.addEventListener('click', closeModal);
 elements.btnConfirm.addEventListener('click', confirmStart);
-
-// Chiudi modal cliccando fuori
 elements.modalOverlay.addEventListener('click', (e) => {
-    if (e.target === elements.modalOverlay) {
-        closeModal();
+    if (e.target === elements.modalOverlay) closeModal();
+});
+
+// Ricerca
+elements.searchInput.addEventListener('input', handleSearchInput);
+elements.searchClear.addEventListener('click', clearSearch);
+elements.btnCloseSearch.addEventListener('click', hideSearchResults);
+
+// Chiudi ricerca cliccando fuori
+document.addEventListener('click', (e) => {
+    const searchContainer = document.getElementById('searchBarContainer');
+    if (!searchContainer.contains(e.target)) {
+        hideSearchResults();
     }
 });
 

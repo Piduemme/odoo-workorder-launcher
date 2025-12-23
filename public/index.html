@@ -19,6 +19,30 @@
     </header>
 
     <!-- ============================================= -->
+    <!-- BARRA DI RICERCA GLOBALE -->
+    <!-- ============================================= -->
+    <div class="search-bar-container" id="searchBarContainer">
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" 
+                   id="searchInput" 
+                   placeholder="Cerca work order per nome o prodotto..." 
+                   autocomplete="off">
+            <button class="search-clear hidden" id="searchClear">✕</button>
+        </div>
+        <!-- Risultati ricerca (dropdown) -->
+        <div class="search-results hidden" id="searchResults">
+            <div class="search-results-header">
+                <span>Risultati ricerca</span>
+                <button class="btn-close-search" id="btnCloseSearch">Chiudi</button>
+            </div>
+            <div class="search-results-list" id="searchResultsList">
+                <!-- Popolato dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
     <!-- CONTENUTO PRINCIPALE -->
     <!-- ============================================= -->
     <main class="main-content">
@@ -35,19 +59,40 @@
             </div>
         </section>
 
-        <!-- STEP 2: Work Orders disponibili (nascosto inizialmente) -->
+        <!-- STEP 2: Work Orders del centro selezionato -->
         <section class="step-section hidden" id="stepWorkorders">
             <div class="section-header">
                 <h2 class="section-title">
-                    2. Work Orders pronti per: 
+                    Work Orders per: 
                     <span class="highlight" id="selectedWorkcenterName">-</span>
                 </h2>
                 <button class="btn-back" id="btnBack">
                     ← Cambia centro
                 </button>
             </div>
-            <div class="kanban-grid" id="workorderGrid">
-                <!-- I work orders vengono caricati dinamicamente -->
+            
+            <!-- Tab per Attivi / Pronti -->
+            <div class="tabs">
+                <button class="tab active" data-tab="active" id="tabActive">
+                    🔄 Attivi <span class="tab-count" id="countActive">0</span>
+                </button>
+                <button class="tab" data-tab="ready" id="tabReady">
+                    ⏳ Pronti <span class="tab-count" id="countReady">0</span>
+                </button>
+            </div>
+            
+            <!-- Contenuto tab Attivi -->
+            <div class="tab-content" id="tabContentActive">
+                <div class="kanban-grid" id="activeWorkorderGrid">
+                    <!-- Work orders attivi -->
+                </div>
+            </div>
+            
+            <!-- Contenuto tab Pronti -->
+            <div class="tab-content hidden" id="tabContentReady">
+                <div class="kanban-grid" id="readyWorkorderGrid">
+                    <!-- Work orders pronti -->
+                </div>
             </div>
         </section>
 
@@ -59,10 +104,20 @@
     <div class="modal-overlay hidden" id="modalOverlay">
         <div class="modal">
             <h3 class="modal-title">Conferma Avvio</h3>
-            <p class="modal-text">
-                Vuoi avviare la lavorazione per:<br>
-                <strong id="modalWorkorderName">-</strong>
-            </p>
+            <div class="modal-body">
+                <p class="modal-text">
+                    Vuoi avviare la lavorazione per:<br>
+                    <strong id="modalWorkorderName">-</strong>
+                </p>
+                <!-- Avviso se il workcenter è diverso -->
+                <div class="modal-warning hidden" id="modalWorkcenterWarning">
+                    <span class="warning-icon">⚠️</span>
+                    <span class="warning-text">
+                        Questo work order è assegnato a <strong id="modalCurrentWorkcenter">-</strong>.<br>
+                        Verrà riassegnato a <strong id="modalTargetWorkcenter">-</strong> prima dell'avvio.
+                    </span>
+                </div>
+            </div>
             <div class="modal-buttons">
                 <button class="btn btn-cancel" id="btnCancel">Annulla</button>
                 <button class="btn btn-confirm" id="btnConfirm">✓ Avvia</button>
