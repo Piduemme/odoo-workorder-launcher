@@ -157,23 +157,21 @@ const WORKORDER_FIELDS = [
 ];
 
 /**
- * Recupera work orders pronti per un centro di lavoro
- * @param {number} workcenterId - ID del centro di lavoro
+ * Recupera TUTTI i work orders pronti (di qualsiasi centro di lavoro)
  * @returns {Promise<Array>} Lista di work orders in stato 'ready'
  */
-async function getReadyWorkorders(workcenterId) {
-    console.log(`[ODOO] Recupero work orders pronti per workcenter ${workcenterId}...`);
+async function getAllReadyWorkorders() {
+    console.log(`[ODOO] Recupero TUTTI i work orders pronti...`);
     
     const workorders = await executeKw(
         'mrp.workorder',
         'search_read',
         [[
-            ['workcenter_id', '=', workcenterId],
             ['state', '=', 'ready']
         ]],
         {
             fields: WORKORDER_FIELDS,
-            order: 'id'
+            order: 'workcenter_id, id'
         }
     );
 
@@ -181,23 +179,21 @@ async function getReadyWorkorders(workcenterId) {
 }
 
 /**
- * Recupera work orders attivi (in progress) per un centro di lavoro
- * @param {number} workcenterId - ID del centro di lavoro
+ * Recupera TUTTI i work orders attivi (di qualsiasi centro di lavoro)
  * @returns {Promise<Array>} Lista di work orders in stato 'progress'
  */
-async function getActiveWorkorders(workcenterId) {
-    console.log(`[ODOO] Recupero work orders attivi per workcenter ${workcenterId}...`);
+async function getAllActiveWorkorders() {
+    console.log(`[ODOO] Recupero TUTTI i work orders attivi...`);
     
     const workorders = await executeKw(
         'mrp.workorder',
         'search_read',
         [[
-            ['workcenter_id', '=', workcenterId],
             ['state', '=', 'progress']
         ]],
         {
             fields: WORKORDER_FIELDS,
-            order: 'id'
+            order: 'workcenter_id, id'
         }
     );
 
@@ -205,17 +201,18 @@ async function getActiveWorkorders(workcenterId) {
 }
 
 /**
- * Recupera tutti i work orders per un centro di lavoro (ready + progress)
- * @param {number} workcenterId - ID del centro di lavoro
+ * Recupera TUTTI i work orders (ready + progress) di tutti i centri
  * @returns {Promise<Object>} Oggetto con { ready: [...], active: [...] }
  */
-async function getWorkordersForWorkcenter(workcenterId) {
-    console.log(`[ODOO] Recupero tutti i work orders per workcenter ${workcenterId}...`);
+async function getAllWorkorders() {
+    console.log(`[ODOO] Recupero TUTTI i work orders...`);
     
     const [ready, active] = await Promise.all([
-        getReadyWorkorders(workcenterId),
-        getActiveWorkorders(workcenterId)
+        getAllReadyWorkorders(),
+        getAllActiveWorkorders()
     ]);
+    
+    console.log(`[ODOO] Trovati ${ready.length} pronti, ${active.length} attivi (totale)`);
     
     return { ready, active };
 }
@@ -361,9 +358,9 @@ async function startWorkorder(workorderId, targetWorkcenterId = null) {
 module.exports = {
     testConnection,
     getWorkcenters,
-    getReadyWorkorders,
-    getActiveWorkorders,
-    getWorkordersForWorkcenter,
+    getAllReadyWorkorders,
+    getAllActiveWorkorders,
+    getAllWorkorders,
     searchWorkorders,
     startWorkorder,
     changeWorkcenter,

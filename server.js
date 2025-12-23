@@ -41,15 +41,14 @@ app.get('/api/workcenters', async (req, res) => {
 });
 
 // ----------------------------------------------
-// GET /api/workorders/:workcenterId
-// Recupera tutti i work orders (ready + active) per un centro di lavoro
+// GET /api/workorders
+// Recupera TUTTI i work orders (ready + active) di TUTTI i centri
 // ----------------------------------------------
-app.get('/api/workorders/:workcenterId', async (req, res) => {
+app.get('/api/workorders', async (req, res) => {
     try {
-        const workcenterId = parseInt(req.params.workcenterId);
-        console.log(`[API] Richiesta work orders per workcenter ID: ${workcenterId}`);
+        console.log(`[API] Richiesta TUTTI i work orders`);
         
-        const workorders = await odooApi.getWorkordersForWorkcenter(workcenterId);
+        const workorders = await odooApi.getAllWorkorders();
         console.log(`[API] Trovati ${workorders.ready.length} pronti, ${workorders.active.length} attivi`);
         res.json(workorders);
     } catch (error) {

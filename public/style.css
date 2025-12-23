@@ -49,8 +49,8 @@
     /* Dimensioni */
     --header-height: 60px;
     --search-bar-height: 60px;
-    --card-min-width: 180px;
-    --card-max-width: 220px;
+    --card-min-width: 200px;
+    --card-max-width: 250px;
     --spacing: 16px;
     --border-radius: 8px;
 }
@@ -446,8 +446,8 @@ body {
     padding: var(--spacing);
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    border-left: 5px solid var(--color-info);
-    min-height: 120px;
+    border-left: 5px solid var(--color-primary);
+    min-height: 140px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -468,10 +468,10 @@ body {
     background: linear-gradient(135deg, #f0fff4 0%, white 100%);
 }
 
-/* Work order di un altro centro */
+/* Work order di un altro centro - evidenziato con sfondo giallo chiaro */
 .workorder-card.other-workcenter {
     border-left-color: var(--color-warning);
-    opacity: 0.9;
+    background: linear-gradient(135deg, #fffbeb 0%, white 100%);
 }
 
 .workorder-card .card-header {
@@ -491,14 +491,26 @@ body {
     margin-top: 4px;
 }
 
+/* Workcenter badge sulla card */
 .workorder-card .card-workcenter {
-    font-size: 0.8rem;
-    color: var(--gray-500);
-    margin-top: 4px;
-    background: var(--gray-100);
-    padding: 2px 6px;
+    font-size: 0.75rem;
+    margin-top: 6px;
+    padding: 3px 8px;
     border-radius: 4px;
     display: inline-block;
+}
+
+/* Workcenter uguale a quello selezionato - verde */
+.workorder-card .card-workcenter.same {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Workcenter diverso - giallo/arancione */
+.workorder-card .card-workcenter.different {
+    background: #fff3cd;
+    color: #856404;
+    font-weight: 600;
 }
 
 .workorder-card .card-details {
@@ -729,12 +741,12 @@ body {
 /* --- RESPONSIVE --- */
 @media (max-width: 768px) {
     :root {
-        --card-min-width: 150px;
+        --card-min-width: 160px;
         --card-max-width: 1fr;
     }
     
     .kanban-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
     
     .header h1 {

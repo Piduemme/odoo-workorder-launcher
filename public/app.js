@@ -2,14 +2,14 @@
 // === APP.JS - FRONTEND APPLICATION =============
 // ===============================================
 // Gestisce l'interfaccia utente e le chiamate API
-// Flusso: Selezione workcenter → Lista workorders → Avvio
+// Flusso: Selezione workcenter → Vedi TUTTI i workorders → Avvio
 // Include ricerca globale e riassegnazione workcenter
 
 // --- STATO APPLICAZIONE ---
 const state = {
     workcenters: [],           // Lista centri di lavoro
     selectedWorkcenter: null,  // Centro di lavoro selezionato
-    workorders: {              // Work orders del centro selezionato
+    workorders: {              // TUTTI i work orders (di qualsiasi centro)
         ready: [],
         active: []
     },
@@ -170,18 +170,19 @@ function renderWorkcenters() {
 /**
  * Renderizza una card work order
  * @param {Object} wo - Work order
- * @param {boolean} showWorkcenter - Se mostrare il nome del workcenter
  */
-function renderWorkorderCard(wo, showWorkcenter = false) {
+function renderWorkorderCard(wo) {
     const productName = wo.product_id ? wo.product_id[1] : '-';
     const workcenterName = wo.workcenter_id ? wo.workcenter_id[1] : '-';
-    const isOtherWorkcenter = state.selectedWorkcenter && 
-        wo.workcenter_id && 
-        wo.workcenter_id[0] !== state.selectedWorkcenter.id;
+    const workcenterIdOfWo = wo.workcenter_id ? wo.workcenter_id[0] : null;
+    
+    // Controlla se questo work order è del centro selezionato o di un altro
+    const isCurrentWorkcenter = state.selectedWorkcenter && 
+        workcenterIdOfWo === state.selectedWorkcenter.id;
     
     const cardClasses = ['workorder-card'];
     if (wo.state === 'progress') cardClasses.push('active');
-    if (isOtherWorkcenter) cardClasses.push('other-workcenter');
+    if (!isCurrentWorkcenter) cardClasses.push('other-workcenter');
     
     return `
         <div class="${cardClasses.join(' ')}" 
@@ -190,7 +191,10 @@ function renderWorkorderCard(wo, showWorkcenter = false) {
             <div class="card-header">
                 <div class="card-name">${escapeHtml(wo.display_name || wo.name)}</div>
                 <div class="card-product">📦 ${escapeHtml(productName)}</div>
-                ${showWorkcenter ? `<div class="card-workcenter">🏭 ${escapeHtml(workcenterName)}</div>` : ''}
+                <div class="card-workcenter ${isCurrentWorkcenter ? 'same' : 'different'}">
+                    🏭 ${escapeHtml(workcenterName)}
+                    ${isCurrentWorkcenter ? '' : ' ⚠️'}
+                </div>
             </div>
             <div class="card-details">
                 <div class="card-qty">
@@ -207,11 +211,24 @@ function renderWorkorderCard(wo, showWorkcenter = false) {
 
 /**
  * Renderizza i work orders nelle tab
+ * Mostra TUTTI i work orders, evidenziando quelli del centro selezionato
  */
 function renderWorkorders() {
     // Aggiorna contatori
     elements.countActive.textContent = state.workorders.active.length;
     elements.countReady.textContent = state.workorders.ready.length;
+    
+    // Ordina: prima quelli del centro selezionato, poi gli altri
+    const sortByWorkcenter = (a, b) => {
+        const aIsCurrent = a.workcenter_id && state.selectedWorkcenter && 
+            a.workcenter_id[0] === state.selectedWorkcenter.id;
+        const bIsCurrent = b.workcenter_id && state.selectedWorkcenter && 
+            b.workcenter_id[0] === state.selectedWorkcenter.id;
+        
+        if (aIsCurrent && !bIsCurrent) return -1;
+        if (!aIsCurrent && bIsCurrent) return 1;
+        return 0;
+    };
     
     // Tab Attivi
     if (state.workorders.active.length === 0) {
@@ -222,7 +239,8 @@ function renderWorkorders() {
             </div>
         `;
     } else {
-        elements.activeWorkorderGrid.innerHTML = state.workorders.active
+        const sortedActive = [...state.workorders.active].sort(sortByWorkcenter);
+        elements.activeWorkorderGrid.innerHTML = sortedActive
             .map(wo => renderWorkorderCard(wo))
             .join('');
     }
@@ -236,7 +254,8 @@ function renderWorkorders() {
             </div>
         `;
     } else {
-        elements.readyWorkorderGrid.innerHTML = state.workorders.ready
+        const sortedReady = [...state.workorders.ready].sort(sortByWorkcenter);
+        elements.readyWorkorderGrid.innerHTML = sortedReady
             .map(wo => renderWorkorderCard(wo))
             .join('');
     }
@@ -380,7 +399,24 @@ function switchTab(tabName) {
 // ===============================================
 
 /**
- * Seleziona un centro di lavoro e carica i suoi work orders
+ * Carica TUTTI i work orders da Odoo
+ */
+async function loadAllWorkorders() {
+    try {
+        const response = await fetch('/api/workorders');
+        if (!response.ok) throw new Error('Errore nel caricamento');
+        
+        state.workorders = await response.json();
+        return state.workorders;
+        
+    } catch (error) {
+        console.error('Errore caricamento workorders:', error);
+        throw error;
+    }
+}
+
+/**
+ * Seleziona un centro di lavoro e mostra TUTTI i work orders
  */
 async function selectWorkcenter(workcenterId) {
     state.selectedWorkcenter = state.workcenters.find(wc => wc.id === workcenterId);
@@ -396,7 +432,7 @@ async function selectWorkcenter(workcenterId) {
     elements.activeWorkorderGrid.innerHTML = `
         <div class="loading-placeholder">
             <div class="spinner"></div>
-            <p>Caricamento...</p>
+            <p>Caricamento work orders...</p>
         </div>
     `;
     elements.readyWorkorderGrid.innerHTML = elements.activeWorkorderGrid.innerHTML;
@@ -405,12 +441,9 @@ async function selectWorkcenter(workcenterId) {
     elements.stepWorkcenters.classList.add('hidden');
     elements.stepWorkorders.classList.remove('hidden');
     
-    // Carica work orders
+    // Carica TUTTI i work orders
     try {
-        const response = await fetch(`/api/workorders/${workcenterId}`);
-        if (!response.ok) throw new Error('Errore nel caricamento');
-        
-        state.workorders = await response.json();
+        await loadAllWorkorders();
         renderWorkorders();
         
         // Se ci sono attivi, mostra quella tab, altrimenti mostra pronti
@@ -421,7 +454,6 @@ async function selectWorkcenter(workcenterId) {
         }
         
     } catch (error) {
-        console.error('Errore caricamento workorders:', error);
         showToast('Errore nel caricamento degli ordini', 'error');
     }
 }
@@ -481,7 +513,7 @@ function selectWorkorder(workorderId, currentState) {
         state.selectedWorkcenter && 
         wo.workcenter_id && 
         wo.workcenter_id[0] === state.selectedWorkcenter.id) {
-        showToast('Questa lavorazione è già attiva', 'warning');
+        showToast('Questa lavorazione è già attiva su questo centro', 'warning');
         return;
     }
     
@@ -534,10 +566,9 @@ async function confirmStart() {
         closeModal();
         clearSearch();
         
-        // Ricarica i work orders
-        if (state.selectedWorkcenter) {
-            await selectWorkcenter(state.selectedWorkcenter.id);
-        }
+        // Ricarica TUTTI i work orders
+        await loadAllWorkorders();
+        renderWorkorders();
         
     } catch (error) {
         console.error('Errore avvio workorder:', error);
