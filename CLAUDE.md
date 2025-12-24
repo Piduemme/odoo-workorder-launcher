@@ -12,22 +12,38 @@ Questo file contiene istruzioni per Claude Code quando lavora su questo progetto
 - **Frontend**: HTML/CSS/JS vanilla (no framework)
 - **API Odoo**: XML-RPC (libreria `xmlrpc`)
 - **PWA**: Service Worker per funzionalità offline
+- **Scanner**: html5-qrcode per scansione barcode
 
 ## Struttura File Principali
 
 ```
 odoo-workorder-launcher/
-├── server.js          # Server Express + endpoint REST + cache
+├── server.js          # Server Express HTTP/HTTPS + endpoint REST + cache
 ├── odoo-api.js        # Tutte le chiamate XML-RPC verso Odoo
-├── cache.js           # (non usato, cache integrata in server.js)
 ├── public/
 │   ├── index.html     # UI principale
-│   ├── app.js         # Logica frontend (~1600 righe)
-│   ├── style.css      # Stili (~1700 righe)
+│   ├── app.js         # Logica frontend (~2000 righe)
+│   ├── style.css      # Stili (~1900 righe)
 │   ├── sw.js          # Service Worker
 │   └── manifest.json  # PWA manifest
+├── certs/             # Certificati SSL (self-signed, non versionati)
+│   ├── key.pem
+│   └── cert.pem
 ├── .env               # Credenziali Odoo (NON versionato)
 └── .env.example       # Template credenziali
+```
+
+## Server
+
+Il server ascolta su due porte:
+- **HTTP**: porta 3000 (default)
+- **HTTPS**: porta 3443 (richiesto per scanner barcode su iOS)
+
+Per rigenerare i certificati SSL:
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout certs/key.pem -out certs/cert.pem \
+  -subj "/C=IT/ST=Italy/L=Milan/O=Piduemme/CN=localhost"
 ```
 
 ## Modelli Odoo Utilizzati
@@ -84,6 +100,12 @@ const specsState = {
     specsNew: [],
     // ...
 };
+
+// Cache pre-caricamento schede tecniche
+const specsCache = {
+    data: new Map(),  // workorderId -> { data, timestamp }
+    TTL: 5 * 60 * 1000  // 5 minuti
+};
 ```
 
 ### Chiamate Odoo (odoo-api.js)
@@ -105,6 +127,39 @@ const cache = {
     chiave: { data: null, timestamp: 0, ttl: 30 * 60 * 1000 }
 };
 ```
+
+### Centri di Lavoro Nascosti (odoo-api.js)
+```javascript
+// Centri di lavoro da nascondere
+const HIDDEN_WORKCENTERS = [
+    "fase di saldatura generica",
+    "fase di estrusione generica",
+];
+```
+
+## Funzionalità Principali
+
+### Scanner Barcode
+- Pulsante 📷 nella barra di ricerca
+- Usa fotocamera posteriore del dispositivo
+- Supporta: Code128, Code39, EAN, UPC, ITF, Codabar
+- Richiede HTTPS su iOS
+
+### Tab Work Orders
+- **Attivi**: Solo WO del workcenter corrente
+- **Pronti**: Tutti i WO pronti (filtro compatibilità attivo)
+
+### Avvio da Ricerca
+Quando si cerca un WO senza aver selezionato un workcenter:
+- Click su "Avvia" mostra pulsanti per scegliere il workcenter
+- Pulsanti colorati per tipo operazione
+- Compatibili in verde, incompatibili in arancione
+
+### Card Workcenter
+Sfondo colorato in base al tipo operazione:
+- **Estrusione**: verde
+- **Saldatura**: arancione
+- **Stampa**: blu
 
 ## Comandi Utili
 
@@ -129,6 +184,7 @@ curl -X POST http://localhost:3000/api/cache/invalidate
 3. **Error handling**: `withRetry()` gestisce errori di rete automaticamente
 4. **UI**: Touch-friendly, minimo 220px per card
 5. **Specifiche tecniche**: Il totale BOM è visibile solo se `hasEstrusione: true`
+6. **HTTPS**: Richiesto per scanner barcode su iOS/Safari
 
 ## Relazione con odoo-modifiche-schede
 
