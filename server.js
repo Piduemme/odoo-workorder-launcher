@@ -312,7 +312,7 @@ app.get('/api/cache/status', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log('');
     console.log('===============================================');
-    console.log('  ODOO WORKORDER LAUNCHER v2.3');
+    console.log('  ORDINI DI LAVORO - PIDUEMME v2.3');
     console.log('  + Cache lato server');
     console.log('===============================================');
     console.log(`  http://0.0.0.0:${PORT}`);

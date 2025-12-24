@@ -1,6 +1,6 @@
 // ===============================================
-// === APP.JS - v2.2 =============================
-// === FIX: Race conditions, Memory leaks ========
+// === APP.JS - v2.3 =============================
+// === Ordini di Lavoro - Piduemme ===============
 // ===============================================
 
 // ===============================================
@@ -285,13 +285,13 @@ const state = {
     workorders: { ready: [], active: [] },
     selectedWorkorder: null,
     searchResults: [],
-    activeTab: 'active',
+    activeTab: 'ready',  // Default: tab Pronti
     autoRefresh: false,
     refreshInterval: 30,
     darkMode: false,
     compactView: false,
     filterCurrentWorkcenter: false,
-    filterCompatible: true,
+    filterCompatible: true,  // Default: sempre attivo
     
     // Flag per prevenire azioni multiple
     isLoading: false,
@@ -745,7 +745,8 @@ async function selectWorkcenter(id) {
     $('stepWorkorders').classList.remove('hidden');
     
     await loadAllWorkorders();
-    switchTab(state.workorders.active.length > 0 ? 'active' : 'ready');
+    // Sempre mostra tab "Pronti" come default
+    switchTab('ready');
     startAutoRefresh();
 }
 

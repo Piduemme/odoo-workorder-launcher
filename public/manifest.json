@@ -1,6 +1,6 @@
 {
-    "name": "Workorder Launcher - Piduemme",
-    "short_name": "Workorders",
+    "name": "Ordini di Lavoro - Piduemme",
+    "short_name": "Ordini",
     "description": "Avvia e gestisci work orders Odoo MRP",
     "start_url": "/",
     "display": "standalone",
