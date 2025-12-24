@@ -769,6 +769,9 @@ async function loadAllWorkorders() {
     if (result !== null) {
       state.workorders = result;
       renderWorkorders();
+
+      // Pre-carica le schede tecniche in background
+      preloadSpecsForActiveWorkorders();
     }
   } catch {
     showToast("Errore caricamento", "error");
@@ -1039,6 +1042,101 @@ const specsState = {
   allKeys: [],
 };
 
+// Cache per pre-caricamento schede tecniche
+const specsCache = {
+  data: new Map(), // workorderId -> { data, timestamp }
+  pending: new Set(), // workorderId in caricamento
+  TTL: 5 * 60 * 1000, // 5 minuti
+
+  /**
+   * Recupera dati dalla cache se validi
+   */
+  get(workorderId) {
+    const entry = this.data.get(workorderId);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > this.TTL) {
+      this.data.delete(workorderId);
+      return null;
+    }
+    return entry.data;
+  },
+
+  /**
+   * Salva dati in cache
+   */
+  set(workorderId, data) {
+    this.data.set(workorderId, { data, timestamp: Date.now() });
+  },
+
+  /**
+   * Invalida cache per un workorder (dopo salvataggio)
+   */
+  invalidate(workorderId) {
+    this.data.delete(workorderId);
+  },
+
+  /**
+   * Pulisce cache scaduta
+   */
+  cleanup() {
+    const now = Date.now();
+    for (const [id, entry] of this.data) {
+      if (now - entry.timestamp > this.TTL) {
+        this.data.delete(id);
+      }
+    }
+  },
+};
+
+/**
+ * Pre-carica le schede tecniche per tutti i workorder attivi in background
+ */
+async function preloadSpecsForActiveWorkorders() {
+  // Prendi tutti i workorder (attivi e pronti)
+  const allWorkorders = [...state.workorders.active, ...state.workorders.ready];
+
+  // Filtra quelli non ancora in cache e non in caricamento
+  const toLoad = allWorkorders.filter(
+    (wo) => !specsCache.get(wo.id) && !specsCache.pending.has(wo.id),
+  );
+
+  if (toLoad.length === 0) return;
+
+  console.log(
+    `[SpecsCache] Pre-caricamento ${toLoad.length} schede tecniche...`,
+  );
+
+  // Carica in parallelo con limit di 3 richieste concorrenti
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < toLoad.length; i += BATCH_SIZE) {
+    const batch = toLoad.slice(i, i + BATCH_SIZE);
+
+    await Promise.all(
+      batch.map(async (wo) => {
+        try {
+          specsCache.pending.add(wo.id);
+          const res = await fetch(`/api/workorders/${wo.id}/specs`);
+          if (res.ok) {
+            const data = await res.json();
+            specsCache.set(wo.id, data);
+          }
+        } catch (e) {
+          console.warn(
+            `[SpecsCache] Errore pre-caricamento WO ${wo.id}:`,
+            e.message,
+          );
+        } finally {
+          specsCache.pending.delete(wo.id);
+        }
+      }),
+    );
+  }
+
+  console.log(
+    `[SpecsCache] Pre-caricamento completato. Cache size: ${specsCache.data.size}`,
+  );
+}
+
 // Debounce per ricerca prodotti
 let productSearchTimeout = null;
 const productSearchCache = {};
@@ -1059,10 +1157,17 @@ async function showDetails(workorderId) {
   $("specsChangesBadge").classList.add("hidden");
 
   try {
-    const res = await fetch(`/api/workorders/${workorderId}/specs`);
-    if (!res.ok) throw new Error("Errore caricamento dati");
+    // Prova a usare la cache, altrimenti carica dal server
+    let data = specsCache.get(workorderId);
 
-    const data = await res.json();
+    if (!data) {
+      const res = await fetch(`/api/workorders/${workorderId}/specs`);
+      if (!res.ok) throw new Error("Errore caricamento dati");
+      data = await res.json();
+      specsCache.set(workorderId, data);
+    } else {
+      console.log(`[SpecsCache] Usando dati dalla cache per WO ${workorderId}`);
+    }
 
     // Popola state
     specsState.productionId = data.production_id;
@@ -1670,7 +1775,8 @@ async function specsSaveAll() {
     if (result.success) {
       showToast("Modifiche salvate con successo!", "success");
 
-      // Ricarica dati
+      // Invalida cache e ricarica dati freschi
+      specsCache.invalidate(specsState.workorderId);
       await showDetails(specsState.workorderId);
     } else {
       const errMsg =

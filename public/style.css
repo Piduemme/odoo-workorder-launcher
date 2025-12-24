@@ -1421,16 +1421,53 @@ body {
     margin-bottom: var(--spacing);
 }
 
-.specs-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+/* Layout a righe per info MO */
+.specs-info-row {
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--spacing-sm) var(--spacing);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
 }
 
-.specs-info-section .info-row {
+.specs-info-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.specs-info-row-full {
+    display: block;
+}
+
+.info-cell {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1;
+    min-width: 150px;
+}
+
+.info-cell-small {
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
+.info-cell-full {
+    width: 100%;
+    flex: none;
+}
+
+.info-cell-full .info-value,
+.info-cell-full .click-to-edit {
+    flex: 1;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.info-cell-full .click-to-edit-input {
+    flex: 1;
+    font-size: 1.1em;
 }
 
 .specs-info-section .info-label {
@@ -1758,8 +1795,13 @@ body {
         margin: var(--spacing-sm);
     }
 
-    .specs-info-grid {
-        grid-template-columns: 1fr;
+    .specs-info-row {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .info-cell {
+        min-width: 100%;
     }
 
     .specs-table,

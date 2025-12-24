@@ -256,14 +256,31 @@
                     <!-- SEZIONE INFO MO (nascosta inizialmente) -->
                     <div class="specs-content hidden" id="specsContent">
                         <div class="specs-info-section">
-                            <div class="specs-info-grid">
-                                <div class="info-row">
+                            <!-- Riga 1: Ordine e Stato -->
+                            <div class="specs-info-row">
+                                <div class="info-cell">
                                     <span class="info-label">Ordine:</span>
                                     <span class="info-value" id="specsMoName"
                                         >-</span
                                     >
                                 </div>
-                                <div class="info-row">
+                                <div class="info-cell">
+                                    <span class="info-label">Operazione:</span>
+                                    <span class="info-value" id="specsOperation"
+                                        >-</span
+                                    >
+                                </div>
+                                <div class="info-cell info-cell-small">
+                                    <span class="info-label">Stato:</span>
+                                    <span class="state-badge" id="specsState"
+                                        >-</span
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Riga 2: Prodotto (tutta la larghezza) -->
+                            <div class="specs-info-row specs-info-row-full">
+                                <div class="info-cell info-cell-full">
                                     <span class="info-label">Prodotto:</span>
                                     <span
                                         class="info-value click-to-edit"
@@ -288,7 +305,11 @@
                                         "
                                     />
                                 </div>
-                                <div class="info-row">
+                            </div>
+
+                            <!-- Riga 3: Quantità -->
+                            <div class="specs-info-row">
+                                <div class="info-cell">
                                     <span class="info-label">Quantità:</span>
                                     <span
                                         class="info-value click-to-edit"
@@ -317,22 +338,6 @@
                                         class="info-uom"
                                         id="specsProductUom"
                                     ></span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Operazione:</span>
-                                    <span class="info-value" id="specsOperation"
-                                        >-</span
-                                    >
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Stato:</span>
-                                    <span class="info-value">
-                                        <span
-                                            class="state-badge"
-                                            id="specsState"
-                                            >-</span
-                                        >
-                                    </span>
                                 </div>
                             </div>
                         </div>
