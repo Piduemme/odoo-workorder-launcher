@@ -1,209 +1,418 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#36a763">
-    <title>Ordini di Lavoro - Piduemme</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-</head>
-<body>
-    <!-- HEADER -->
-    <header class="header">
-        <div class="header-left">
-            <h1>🏭 Ordini di Lavoro</h1>
-        </div>
-        <div class="header-right">
-            <button class="header-btn" id="btnToggleTheme" title="Tema">🌙</button>
-            <button class="header-btn" id="btnFullscreen" title="Fullscreen">⛶</button>
-            <div class="connection-status" id="connectionStatus">
-                <span class="status-dot"></span>
-                <span class="status-text">Connessione...</span>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#36a763" />
+        <title>Ordini di Lavoro - Piduemme</title>
+        <link rel="stylesheet" href="style.css" />
+        <link rel="manifest" href="manifest.json" />
+    </head>
+    <body>
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🏭 Ordini di Lavoro</h1>
             </div>
-        </div>
-    </header>
-
-    <!-- TOOLBAR -->
-    <div class="toolbar" id="toolbar">
-        <div class="search-bar">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Cerca work order..." autocomplete="off">
-            <button class="search-clear hidden" id="searchClear">✕</button>
-        </div>
-        
-        <div class="toolbar-controls">
-            <div class="auto-refresh-control">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="autoRefreshToggle">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="control-label">Auto</span>
-                <select id="refreshInterval" class="refresh-select">
-                    <option value="10">10s</option>
-                    <option value="30" selected>30s</option>
-                    <option value="60">1m</option>
-                </select>
-            </div>
-            <button class="toolbar-btn" id="btnRefresh" title="Aggiorna">🔄</button>
-        </div>
-        
-        <!-- Search Results -->
-        <div class="search-results hidden" id="searchResults">
-            <div class="search-results-header">
-                <span>Risultati</span>
-                <button class="btn-close-search" id="btnCloseSearch">Chiudi</button>
-            </div>
-            <div class="search-results-list" id="searchResultsList"></div>
-        </div>
-    </div>
-
-    <!-- MAIN -->
-    <main class="main-content">
-        
-        <!-- STEP 1: Workcenters -->
-        <section class="step-section" id="stepWorkcenters">
-            <h2 class="section-title">Seleziona Centro di Lavoro</h2>
-            <div class="kanban-grid" id="workcenterGrid">
-                <div class="loading-placeholder">
-                    <div class="spinner"></div>
-                    <p>Caricamento...</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- STEP 2: Work Orders -->
-        <section class="step-section hidden" id="stepWorkorders">
-            <div class="section-header">
-                <div class="section-header-left">
-                    <button class="btn-back" id="btnBack">← Indietro</button>
-                    <h2 class="section-title">
-                        <span id="selectedWorkcenterName">-</span>
-                        <span class="workcenter-type-badge" id="workcenterTypeBadge"></span>
-                    </h2>
-                </div>
-                
-                <!-- Filtri -->
-                <div class="filters">
-                    <label class="filter-toggle" title="Mostra solo work orders compatibili con questo tipo di centro">
-                        <input type="checkbox" id="filterCompatible" checked>
-                        <span>Solo compatibili</span>
-                    </label>
-                    <label class="filter-toggle">
-                        <input type="checkbox" id="filterCurrentWorkcenter">
-                        <span>Solo questo centro</span>
-                    </label>
-                    <label class="filter-toggle">
-                        <input type="checkbox" id="filterCompactView">
-                        <span>Compatto</span>
-                    </label>
-                </div>
-            </div>
-            
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab active" id="tabActive">
-                    🔄 Attivi <span class="tab-count" id="countActive">0</span>
+            <div class="header-right">
+                <button class="header-btn" id="btnToggleTheme" title="Tema">
+                    🌙
                 </button>
-                <button class="tab" id="tabReady">
-                    ⏳ Pronti <span class="tab-count" id="countReady">0</span>
+                <button
+                    class="header-btn"
+                    id="btnFullscreen"
+                    title="Fullscreen"
+                >
+                    ⛶
+                </button>
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connessione...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar" id="toolbar">
+            <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Cerca work order..."
+                    autocomplete="off"
+                />
+                <button class="search-clear hidden" id="searchClear">✕</button>
+            </div>
+
+            <div class="toolbar-controls">
+                <div class="auto-refresh-control">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoRefreshToggle" />
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="control-label">Auto</span>
+                    <select id="refreshInterval" class="refresh-select">
+                        <option value="10">10s</option>
+                        <option value="30" selected>30s</option>
+                        <option value="60">1m</option>
+                    </select>
+                </div>
+                <button class="toolbar-btn" id="btnRefresh" title="Aggiorna">
+                    🔄
                 </button>
             </div>
-            
-            <div class="active-info" id="activeInfo">
-                <span id="activeInfoText"></span>
-            </div>
-            
-            <!-- Tab Contents -->
-            <div class="tab-content" id="tabContentActive">
-                <div class="kanban-grid" id="activeWorkorderGrid"></div>
-            </div>
-            <div class="tab-content hidden" id="tabContentReady">
-                <div class="kanban-grid" id="readyWorkorderGrid"></div>
-            </div>
-        </section>
-    </main>
 
-    <!-- MODAL AZIONE -->
-    <div class="modal-overlay hidden" id="modalOverlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modalTitle">Azione</h3>
-                <button class="modal-close" id="modalClose">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-workorder-info">
-                    <div class="info-row">
-                        <span class="info-label">Work Order:</span>
-                        <span class="info-value" id="modalWorkorderName">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Prodotto:</span>
-                        <span class="info-value" id="modalProductName">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Operazione:</span>
-                        <span class="info-value" id="modalOperationType">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Quantità:</span>
-                        <span class="info-value" id="modalQty">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Centro attuale:</span>
-                        <span class="info-value" id="modalCurrentWorkcenter">-</span>
-                    </div>
-                    <div class="info-row hidden" id="modalDurationRow">
-                        <span class="info-label">Tempo trascorso:</span>
-                        <span class="info-value" id="modalDuration">-</span>
-                    </div>
+            <!-- Search Results -->
+            <div class="search-results hidden" id="searchResults">
+                <div class="search-results-header">
+                    <span>Risultati</span>
+                    <button class="btn-close-search" id="btnCloseSearch">
+                        Chiudi
+                    </button>
                 </div>
-                
-                <!-- Warning riassegnazione -->
-                <div class="modal-warning hidden" id="modalWorkcenterWarning">
-                    <span class="warning-icon">⚠️</span>
-                    <span class="warning-text">
-                        Verrà riassegnato a <strong id="modalTargetWorkcenter">-</strong>
-                    </span>
-                </div>
-                
-                <!-- Warning INCOMPATIBILITÀ (rosso) -->
-                <div class="modal-error hidden" id="modalIncompatibleWarning">
-                    <span class="warning-icon">🚫</span>
-                    <span class="warning-text">
-                        <strong>ATTENZIONE:</strong> Questo è un work order di <strong id="modalWoOpType">-</strong> 
-                        ma lo stai assegnando a un centro di <strong id="modalWcOpType">-</strong>!
-                    </span>
-                </div>
-            </div>
-            <div class="modal-actions" id="modalActions"></div>
-        </div>
-    </div>
-
-    <!-- MODAL DETTAGLI -->
-    <div class="modal-overlay hidden" id="detailsModalOverlay">
-        <div class="modal modal-large">
-            <div class="modal-header">
-                <h3 class="modal-title">Dettagli Work Order</h3>
-                <button class="modal-close" id="detailsModalClose">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="details-content" id="detailsContent"></div>
-                <div class="time-tracking" id="timeTracking">
-                    <h4>📊 Storico Tempi</h4>
-                    <div class="time-tracking-list" id="timeTrackingList"></div>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" id="btnCloseDetails">Chiudi</button>
+                <div class="search-results-list" id="searchResultsList"></div>
             </div>
         </div>
-    </div>
 
-    <!-- TOAST -->
-    <div class="toast-container" id="toastContainer"></div>
+        <!-- MAIN -->
+        <main class="main-content">
+            <!-- STEP 1: Workcenters -->
+            <section class="step-section" id="stepWorkcenters">
+                <h2 class="section-title">Seleziona Centro di Lavoro</h2>
+                <div class="kanban-grid" id="workcenterGrid">
+                    <div class="loading-placeholder">
+                        <div class="spinner"></div>
+                        <p>Caricamento...</p>
+                    </div>
+                </div>
+            </section>
 
-    <script src="app.js"></script>
-</body>
+            <!-- STEP 2: Work Orders -->
+            <section class="step-section hidden" id="stepWorkorders">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <button class="btn-back" id="btnBack">
+                            ← Indietro
+                        </button>
+                        <h2 class="section-title">
+                            <span id="selectedWorkcenterName">-</span>
+                            <span
+                                class="workcenter-type-badge"
+                                id="workcenterTypeBadge"
+                            ></span>
+                        </h2>
+                    </div>
+
+                    <!-- Filtri -->
+                    <div class="filters">
+                        <label
+                            class="filter-toggle"
+                            title="Mostra solo work orders compatibili con questo tipo di centro"
+                        >
+                            <input
+                                type="checkbox"
+                                id="filterCompatible"
+                                checked
+                            />
+                            <span>Solo compatibili</span>
+                        </label>
+                        <label class="filter-toggle">
+                            <input
+                                type="checkbox"
+                                id="filterCurrentWorkcenter"
+                            />
+                            <span>Solo questo centro</span>
+                        </label>
+                        <label class="filter-toggle">
+                            <input type="checkbox" id="filterCompactView" />
+                            <span>Compatto</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" id="tabActive">
+                        🔄 Attivi
+                        <span class="tab-count" id="countActive">0</span>
+                    </button>
+                    <button class="tab" id="tabReady">
+                        ⏳ Pronti
+                        <span class="tab-count" id="countReady">0</span>
+                    </button>
+                </div>
+
+                <div class="active-info" id="activeInfo">
+                    <span id="activeInfoText"></span>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="tab-content" id="tabContentActive">
+                    <div class="kanban-grid" id="activeWorkorderGrid"></div>
+                </div>
+                <div class="tab-content hidden" id="tabContentReady">
+                    <div class="kanban-grid" id="readyWorkorderGrid"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- MODAL AZIONE -->
+        <div class="modal-overlay hidden" id="modalOverlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modalTitle">Azione</h3>
+                    <button class="modal-close" id="modalClose">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-workorder-info">
+                        <div class="info-row">
+                            <span class="info-label">Work Order:</span>
+                            <span class="info-value" id="modalWorkorderName"
+                                >-</span
+                            >
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Prodotto:</span>
+                            <span class="info-value" id="modalProductName"
+                                >-</span
+                            >
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Operazione:</span>
+                            <span class="info-value" id="modalOperationType"
+                                >-</span
+                            >
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Quantità:</span>
+                            <span class="info-value" id="modalQty">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Centro attuale:</span>
+                            <span class="info-value" id="modalCurrentWorkcenter"
+                                >-</span
+                            >
+                        </div>
+                        <div class="info-row hidden" id="modalDurationRow">
+                            <span class="info-label">Tempo trascorso:</span>
+                            <span class="info-value" id="modalDuration">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Warning riassegnazione -->
+                    <div
+                        class="modal-warning hidden"
+                        id="modalWorkcenterWarning"
+                    >
+                        <span class="warning-icon">⚠️</span>
+                        <span class="warning-text">
+                            Verrà riassegnato a
+                            <strong id="modalTargetWorkcenter">-</strong>
+                        </span>
+                    </div>
+
+                    <!-- Warning INCOMPATIBILITÀ (rosso) -->
+                    <div
+                        class="modal-error hidden"
+                        id="modalIncompatibleWarning"
+                    >
+                        <span class="warning-icon">🚫</span>
+                        <span class="warning-text">
+                            <strong>ATTENZIONE:</strong> Questo è un work order
+                            di <strong id="modalWoOpType">-</strong> ma lo stai
+                            assegnando a un centro di
+                            <strong id="modalWcOpType">-</strong>!
+                        </span>
+                    </div>
+                </div>
+                <div class="modal-actions" id="modalActions"></div>
+            </div>
+        </div>
+
+        <!-- MODAL DETTAGLI / SCHEDA TECNICA -->
+        <div class="modal-overlay hidden" id="detailsModalOverlay">
+            <div class="modal modal-large modal-specs">
+                <div class="modal-header">
+                    <h3 class="modal-title">Scheda Tecnica</h3>
+                    <span class="badge-changes hidden" id="specsChangesBadge"
+                        >Modifiche non salvate</span
+                    >
+                    <button class="modal-close" id="detailsModalClose">
+                        ✕
+                    </button>
+                </div>
+                <div class="modal-body modal-body-scroll" id="specsModalBody">
+                    <!-- Contenuto caricato dinamicamente -->
+                    <div class="loading-placeholder" id="specsLoading">
+                        <div class="spinner"></div>
+                        <p>Caricamento scheda tecnica...</p>
+                    </div>
+
+                    <!-- SEZIONE INFO MO (nascosta inizialmente) -->
+                    <div class="specs-content hidden" id="specsContent">
+                        <div class="specs-info-section">
+                            <div class="specs-info-grid">
+                                <div class="info-row">
+                                    <span class="info-label">Ordine:</span>
+                                    <span class="info-value" id="specsMoName"
+                                        >-</span
+                                    >
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Prodotto:</span>
+                                    <span
+                                        class="info-value click-to-edit"
+                                        id="specsProductNameText"
+                                        onclick="
+                                            specsActivateEdit('productName')
+                                        "
+                                        >-</span
+                                    >
+                                    <input
+                                        type="text"
+                                        class="click-to-edit-input hidden"
+                                        id="specsProductNameInput"
+                                        onblur="
+                                            specsSaveFieldEdit('productName')
+                                        "
+                                        onkeydown="
+                                            specsHandleKeyDown(
+                                                event,
+                                                'productName',
+                                            )
+                                        "
+                                    />
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Quantità:</span>
+                                    <span
+                                        class="info-value click-to-edit"
+                                        id="specsProductQtyText"
+                                        onclick="
+                                            specsActivateEdit('productQty')
+                                        "
+                                        >-</span
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        class="click-to-edit-input hidden"
+                                        id="specsProductQtyInput"
+                                        onblur="
+                                            specsSaveFieldEdit('productQty')
+                                        "
+                                        onkeydown="
+                                            specsHandleKeyDown(
+                                                event,
+                                                'productQty',
+                                            )
+                                        "
+                                    />
+                                    <span
+                                        class="info-uom"
+                                        id="specsProductUom"
+                                    ></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Operazione:</span>
+                                    <span class="info-value" id="specsOperation"
+                                        >-</span
+                                    >
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Stato:</span>
+                                    <span class="info-value">
+                                        <span
+                                            class="state-badge"
+                                            id="specsState"
+                                            >-</span
+                                        >
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SEZIONE SPECIFICHE TECNICHE -->
+                        <div class="specs-section">
+                            <h4>📋 Specifiche Tecniche</h4>
+                            <table class="specs-table" id="specsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo Macchina</th>
+                                        <th>Chiave</th>
+                                        <th>Valore</th>
+                                        <th class="col-actions"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="specsBody">
+                                    <!-- Righe generate dinamicamente -->
+                                </tbody>
+                            </table>
+                            <div class="specs-actions">
+                                <button
+                                    class="btn btn-sm btn-outline"
+                                    onclick="specsAddNew()"
+                                >
+                                    + Aggiungi Specifica
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- SEZIONE COMPONENTI BOM -->
+                        <div class="bom-section">
+                            <h4>📦 Componenti (Distinta Base)</h4>
+                            <table class="bom-table" id="bomTable">
+                                <thead>
+                                    <tr>
+                                        <th>Prodotto</th>
+                                        <th class="col-qty">Quantità %</th>
+                                        <th class="col-actions"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bomBody">
+                                    <!-- Righe generate dinamicamente -->
+                                </tbody>
+                            </table>
+                            <div class="bom-total-row" id="bomTotalRow">
+                                <span>Totale:</span>
+                                <span class="bom-total-value" id="bomTotalValue"
+                                    >0%</span
+                                >
+                            </div>
+                            <div class="specs-actions">
+                                <button
+                                    class="btn btn-sm btn-outline"
+                                    onclick="bomAddNew()"
+                                >
+                                    + Aggiungi Componente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button
+                        class="btn btn-success hidden"
+                        id="btnSaveSpecs"
+                        onclick="specsSaveAll()"
+                    >
+                        Salva Modifiche
+                    </button>
+                    <button class="btn btn-secondary" id="btnCloseDetails">
+                        Chiudi
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST -->
+        <div class="toast-container" id="toastContainer"></div>
+
+        <script src="app.js"></script>
+    </body>
 </html>

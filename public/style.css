@@ -7,7 +7,7 @@
 */
 
 /* --- RESET E VARIABILI --- */
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap");
 
 * {
     margin: 0;
@@ -21,7 +21,7 @@
     --color-primary-dark: #125632;
     --color-primary-light: #4db87a;
     --color-primary-hover: #2d8a52;
-    
+
     /* Colori UI */
     --bg-primary: #f8f9fa;
     --bg-secondary: #ffffff;
@@ -30,18 +30,18 @@
     --text-secondary: #666666;
     --text-muted: #999999;
     --border-color: #e0e0e0;
-    
+
     /* Colori Stato */
     --color-success: #36a763;
     --color-warning: #ff9800;
     --color-danger: #dc3545;
     --color-info: #17a2b8;
-    
+
     /* Badge operazioni */
     --color-estrusione: #dc3545;
-    --color-saldatura: #9365B8;
-    --color-stampa: #D6145F;
-    
+    --color-saldatura: #9365b8;
+    --color-stampa: #d6145f;
+
     /* Dimensioni */
     --header-height: 60px;
     --toolbar-height: 60px;
@@ -52,12 +52,12 @@
     --spacing-lg: 30px;
     --border-radius: 8px;
     --border-radius-lg: 12px;
-    
+
     /* Ombre */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
-    
+
     /* Transizioni */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.25s ease;
@@ -77,11 +77,19 @@
 
 /* --- BASE --- */
 body {
-    font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+        "Ubuntu",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
-    transition: background-color var(--transition-normal), color var(--transition-normal);
+    transition:
+        background-color var(--transition-normal),
+        color var(--transition-normal);
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
 }
@@ -128,7 +136,7 @@ body {
 }
 
 .header-btn {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
     border: none;
     width: 40px;
     height: 40px;
@@ -140,7 +148,7 @@ body {
 }
 
 .header-btn:hover {
-    background: rgba(255,255,255,0.25);
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .connection-status {
@@ -150,7 +158,7 @@ body {
     font-size: 0.85rem;
     font-weight: 500;
     padding: 6px 14px;
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 20px;
 }
 
@@ -163,7 +171,7 @@ body {
 }
 
 .status-dot.connected {
-    background: #90EE90;
+    background: #90ee90;
     animation: none;
 }
 
@@ -173,8 +181,13 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
 }
 
 /* --- TOOLBAR --- */
@@ -221,7 +234,7 @@ body {
     border: none;
     background: transparent;
     font-size: 1rem;
-    font-family: 'Ubuntu', sans-serif;
+    font-family: "Ubuntu", sans-serif;
     color: var(--text-primary);
     outline: none;
 }
@@ -264,7 +277,7 @@ body {
     background: var(--bg-secondary);
     color: var(--text-primary);
     font-size: 0.9rem;
-    font-family: 'Ubuntu', sans-serif;
+    font-family: "Ubuntu", sans-serif;
 }
 
 /* Toggle Switch */
@@ -302,7 +315,7 @@ body {
     background-color: white;
     transition: var(--transition-fast);
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .toggle-switch input:checked + .toggle-slider {
@@ -325,7 +338,7 @@ body {
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 500;
-    font-family: 'Ubuntu', sans-serif;
+    font-family: "Ubuntu", sans-serif;
     transition: background var(--transition-fast);
 }
 
@@ -370,7 +383,7 @@ body {
 }
 
 .btn-close-search {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
     cursor: pointer;
@@ -380,7 +393,7 @@ body {
 }
 
 .btn-close-search:hover {
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .search-results-list {
@@ -485,7 +498,7 @@ body {
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 500;
-    font-family: 'Ubuntu', sans-serif;
+    font-family: "Ubuntu", sans-serif;
     transition: all var(--transition-fast);
 }
 
@@ -554,7 +567,7 @@ body {
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
-    font-family: 'Ubuntu', sans-serif;
+    font-family: "Ubuntu", sans-serif;
     transition: all var(--transition-fast);
 }
 
@@ -569,14 +582,14 @@ body {
 }
 
 .tab-count {
-    background: rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.1);
     padding: 2px 10px;
     border-radius: 12px;
     font-size: 0.85rem;
 }
 
 .tab.active .tab-count {
-    background: rgba(255,255,255,0.25);
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .tab-content {
@@ -601,7 +614,10 @@ body {
 /* --- KANBAN GRID --- */
 .kanban-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width), var(--card-max-width)));
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(var(--card-min-width), var(--card-max-width))
+    );
     gap: var(--spacing);
 }
 
@@ -653,17 +669,39 @@ body {
 }
 
 /* Colori workcenter */
-.workcenter-card[data-color="1"] { border-left-color: #F06050; }
-.workcenter-card[data-color="2"] { border-left-color: #F4A460; }
-.workcenter-card[data-color="3"] { border-left-color: #F7CD1F; }
-.workcenter-card[data-color="4"] { border-left-color: #6CC1ED; }
-.workcenter-card[data-color="5"] { border-left-color: #814968; }
-.workcenter-card[data-color="6"] { border-left-color: #EB7E7F; }
-.workcenter-card[data-color="7"] { border-left-color: #2C8397; }
-.workcenter-card[data-color="8"] { border-left-color: #475577; }
-.workcenter-card[data-color="9"] { border-left-color: #D6145F; }
-.workcenter-card[data-color="10"] { border-left-color: var(--color-primary); }
-.workcenter-card[data-color="11"] { border-left-color: #9365B8; }
+.workcenter-card[data-color="1"] {
+    border-left-color: #f06050;
+}
+.workcenter-card[data-color="2"] {
+    border-left-color: #f4a460;
+}
+.workcenter-card[data-color="3"] {
+    border-left-color: #f7cd1f;
+}
+.workcenter-card[data-color="4"] {
+    border-left-color: #6cc1ed;
+}
+.workcenter-card[data-color="5"] {
+    border-left-color: #814968;
+}
+.workcenter-card[data-color="6"] {
+    border-left-color: #eb7e7f;
+}
+.workcenter-card[data-color="7"] {
+    border-left-color: #2c8397;
+}
+.workcenter-card[data-color="8"] {
+    border-left-color: #475577;
+}
+.workcenter-card[data-color="9"] {
+    border-left-color: #d6145f;
+}
+.workcenter-card[data-color="10"] {
+    border-left-color: var(--color-primary);
+}
+.workcenter-card[data-color="11"] {
+    border-left-color: #9365b8;
+}
 
 .workcenter-card .card-name {
     font-size: 1.1rem;
@@ -790,7 +828,7 @@ body {
     color: white;
     border-radius: 6px;
     font-weight: 700;
-    font-family: 'Ubuntu Mono', 'SF Mono', Monaco, monospace;
+    font-family: "Ubuntu Mono", "SF Mono", Monaco, monospace;
 }
 
 .workorder-card .card-state {
@@ -816,7 +854,8 @@ body {
 }
 
 /* --- EMPTY & LOADING STATES --- */
-.empty-state, .loading-placeholder {
+.empty-state,
+.loading-placeholder {
     grid-column: 1 / -1;
     text-align: center;
     padding: 60px var(--spacing);
@@ -847,7 +886,9 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* --- MODAL --- */
@@ -857,7 +898,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -896,7 +937,7 @@ body {
 }
 
 .modal-close {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     font-size: 1.3rem;
     color: white;
@@ -907,7 +948,7 @@ body {
 }
 
 .modal-close:hover {
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .modal-body {
@@ -1014,7 +1055,7 @@ body {
     border-radius: var(--border-radius);
     font-size: 1rem;
     font-weight: 600;
-    font-family: 'Ubuntu', sans-serif;
+    font-family: "Ubuntu", sans-serif;
     cursor: pointer;
     transition: all var(--transition-fast);
     flex: 1;
@@ -1260,58 +1301,58 @@ body {
         --card-max-width: 1fr;
         --spacing: 15px;
     }
-    
+
     .header h1 {
         font-size: 1.1rem;
     }
-    
+
     .toolbar {
         flex-wrap: wrap;
         height: auto;
         padding: var(--spacing-sm);
         gap: var(--spacing-sm);
     }
-    
+
     .search-bar {
         flex: 1 1 100%;
         max-width: none;
     }
-    
+
     .toolbar-controls {
         flex: 1 1 100%;
         justify-content: space-between;
     }
-    
+
     .btn-text {
         display: none;
     }
-    
+
     .section-header {
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .filters {
         flex-wrap: wrap;
     }
-    
+
     .modal {
         margin: var(--spacing-sm);
         max-height: calc(100vh - 32px);
     }
-    
+
     .modal-actions {
         flex-direction: column;
     }
-    
+
     .btn {
         width: 100%;
     }
-    
+
     .tabs {
         width: 100%;
     }
-    
+
     .tab {
         flex: 1;
         justify-content: center;
@@ -1323,13 +1364,417 @@ body {
     .auto-refresh-control .control-label {
         display: none;
     }
-    
+
     .header-btn {
         width: 36px;
         height: 36px;
     }
-    
+
     .connection-status .status-text {
         display: none;
+    }
+}
+
+/* ===============================================
+   === SCHEDE TECNICHE (SPECS) EDITOR ============
+   =============================================== */
+
+/* Modal specifico per schede tecniche */
+.modal-specs {
+    max-width: 900px;
+}
+
+.modal-body-scroll {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    padding: var(--spacing);
+}
+
+/* Badge modifiche non salvate */
+.badge-changes {
+    background: var(--color-warning);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: auto;
+    margin-right: var(--spacing);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Sezione info MO */
+.specs-info-section {
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing);
+    margin-bottom: var(--spacing);
+}
+
+.specs-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-sm) var(--spacing);
+}
+
+.specs-info-section .info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.specs-info-section .info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    min-width: 80px;
+}
+
+.specs-info-section .info-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.info-uom {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Click to edit */
+.click-to-edit {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background var(--transition-fast);
+    border: 1px dashed transparent;
+}
+
+.click-to-edit:hover {
+    background: rgba(54, 167, 99, 0.1);
+    border-color: var(--color-primary);
+}
+
+.click-to-edit.modified {
+    background: #fff3cd;
+    border-color: var(--color-warning);
+}
+
+[data-theme="dark"] .click-to-edit.modified {
+    background: rgba(255, 152, 0, 0.2);
+}
+
+.click-to-edit-input {
+    padding: 4px 8px;
+    border: 2px solid var(--color-primary);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: 600;
+    width: 200px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.click-to-edit-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(54, 167, 99, 0.2);
+}
+
+/* State badge */
+.state-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.state-badge.draft {
+    background: #e9ecef;
+    color: #495057;
+}
+.state-badge.confirmed {
+    background: #cce5ff;
+    color: #004085;
+}
+.state-badge.progress {
+    background: #d4edda;
+    color: #155724;
+}
+.state-badge.done {
+    background: var(--color-primary);
+    color: white;
+}
+.state-badge.cancel {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Sezioni specs e BOM */
+.specs-section,
+.bom-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing);
+    margin-bottom: var(--spacing);
+}
+
+.specs-section h4,
+.bom-section h4 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Tabelle */
+.specs-table,
+.bom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.specs-table th,
+.specs-table td,
+.bom-table th,
+.bom-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.specs-table th,
+.bom-table th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.specs-table tbody tr:hover,
+.bom-table tbody tr:hover {
+    background: rgba(54, 167, 99, 0.05);
+}
+
+/* Colonne azioni */
+.col-actions {
+    width: 60px;
+    text-align: center;
+}
+
+.col-qty {
+    width: 120px;
+}
+
+/* Input nelle tabelle */
+.specs-table input,
+.specs-table select,
+.bom-table input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.specs-table input:focus,
+.specs-table select:focus,
+.bom-table input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(54, 167, 99, 0.15);
+}
+
+/* Righe modificate/nuove/eliminate */
+.specs-table tr.modified,
+.bom-table tr.modified {
+    background: #fff3cd !important;
+}
+
+.specs-table tr.new-row,
+.bom-table tr.new-row {
+    background: #d4edda !important;
+}
+
+.specs-table tr.deleted-row,
+.bom-table tr.deleted-row {
+    background: #f8d7da !important;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+[data-theme="dark"] .specs-table tr.modified,
+[data-theme="dark"] .bom-table tr.modified {
+    background: rgba(255, 152, 0, 0.15) !important;
+}
+
+[data-theme="dark"] .specs-table tr.new-row,
+[data-theme="dark"] .bom-table tr.new-row {
+    background: rgba(54, 167, 99, 0.15) !important;
+}
+
+[data-theme="dark"] .specs-table tr.deleted-row,
+[data-theme="dark"] .bom-table tr.deleted-row {
+    background: rgba(220, 53, 69, 0.15) !important;
+}
+
+/* Bottoni nelle tabelle */
+.btn-delete {
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: background var(--transition-fast);
+}
+
+.btn-delete:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.btn-delete:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Azioni sotto le tabelle */
+.specs-actions {
+    margin-top: var(--spacing-sm);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px dashed var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-outline:hover {
+    background: rgba(54, 167, 99, 0.1);
+    border-style: solid;
+}
+
+/* Totale BOM */
+.bom-total-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
+    font-weight: 600;
+    border-top: 2px solid var(--border-color);
+    margin-top: var(--spacing-sm);
+}
+
+.bom-total-value {
+    font-size: 1.1rem;
+    padding: 4px 12px;
+    border-radius: 4px;
+}
+
+.bom-total-value.valid {
+    background: #d4edda;
+    color: #155724;
+}
+
+.bom-total-value.invalid {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Ricerca prodotti dropdown */
+.product-search-container {
+    position: relative;
+}
+
+.product-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+    display: none;
+}
+
+.product-search-results.active {
+    display: block;
+}
+
+.product-search-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+
+.product-search-item:last-child {
+    border-bottom: none;
+}
+
+.product-search-item:hover {
+    background: rgba(54, 167, 99, 0.1);
+}
+
+.product-search-loading {
+    padding: 10px 12px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Responsive schede tecniche */
+@media (max-width: 768px) {
+    .modal-specs {
+        margin: var(--spacing-sm);
+    }
+
+    .specs-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .specs-table,
+    .bom-table {
+        font-size: 0.8rem;
+    }
+
+    .specs-table th,
+    .specs-table td,
+    .bom-table th,
+    .bom-table td {
+        padding: 8px;
+    }
+
+    .col-actions {
+        width: 40px;
     }
 }
