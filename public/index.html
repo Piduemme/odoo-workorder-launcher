@@ -11,6 +11,8 @@
         <title>Ordini di Lavoro - Piduemme</title>
         <link rel="stylesheet" href="style.css" />
         <link rel="manifest" href="manifest.json" />
+        <!-- Libreria per scansione barcode -->
+        <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     </head>
     <body>
         <!-- HEADER -->
@@ -47,6 +49,9 @@
                     autocomplete="off"
                 />
                 <button class="search-clear hidden" id="searchClear">✕</button>
+                <button class="btn-scan" id="btnScan" title="Scansiona barcode">
+                    📷
+                </button>
             </div>
 
             <div class="toolbar-controls">
@@ -204,6 +209,22 @@
                         </div>
                     </div>
 
+                    <!-- Selezione workcenter con pulsanti (quando avvio da ricerca) -->
+                    <div
+                        class="modal-workcenter-buttons hidden"
+                        id="modalWorkcenterButtons"
+                    >
+                        <div class="workcenter-buttons-title">
+                            Seleziona centro di lavoro:
+                        </div>
+                        <div
+                            class="workcenter-buttons-grid"
+                            id="workcenterButtonsGrid"
+                        >
+                            <!-- Pulsanti generati dinamicamente -->
+                        </div>
+                    </div>
+
                     <!-- Warning riassegnazione -->
                     <div
                         class="modal-warning hidden"
@@ -231,6 +252,25 @@
                     </div>
                 </div>
                 <div class="modal-actions" id="modalActions"></div>
+            </div>
+        </div>
+
+        <!-- MODAL SCANNER BARCODE -->
+        <div class="modal-overlay hidden" id="scannerModalOverlay">
+            <div class="modal modal-scanner">
+                <div class="modal-header">
+                    <h3 class="modal-title">Scansiona Barcode</h3>
+                    <button class="modal-close" id="scannerModalClose">
+                        ✕
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="scannerContainer"></div>
+                    <p class="scanner-hint">
+                        Posiziona il barcode al centro, a 15-20cm dalla
+                        fotocamera
+                    </p>
+                </div>
             </div>
         </div>
 

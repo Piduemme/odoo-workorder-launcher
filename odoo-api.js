@@ -281,10 +281,16 @@ async function getMachineTypes() {
   }
 }
 
+// Centri di lavoro da nascondere
+const HIDDEN_WORKCENTERS = [
+  "fase di saldatura generica",
+  "fase di estrusione generica",
+];
+
 async function getWorkcenters() {
   console.log("[ODOO] Recupero centri di lavoro...");
 
-  const workcenters = await executeKw(
+  let workcenters = await executeKw(
     "mrp.workcenter",
     "search_read",
     [[["active", "=", true]]],
@@ -300,6 +306,11 @@ async function getWorkcenters() {
       ],
       order: "sequence, name",
     },
+  );
+
+  // Filtra i centri di lavoro nascosti
+  workcenters = workcenters.filter(
+    (wc) => !HIDDEN_WORKCENTERS.includes(wc.name.toLowerCase()),
   );
 
   const tags = await getWorkcenterTags();

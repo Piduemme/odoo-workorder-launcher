@@ -5,11 +5,15 @@
 
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
+const https = require("https");
+const http = require("http");
 const odooApi = require("./odoo-api");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -592,19 +596,38 @@ app.get("/api/spec-keys", async (req, res) => {
 // ===============================================
 // === START =====================================
 // ===============================================
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("");
-  console.log("===============================================");
-  console.log("  ORDINI DI LAVORO - PIDUEMME v2.3");
-  console.log("  + Cache lato server");
-  console.log("===============================================");
-  console.log(`  http://0.0.0.0:${PORT}`);
-  console.log(`  Odoo: ${process.env.ODOO_URL}`);
-  console.log("");
-  console.log("  Cache TTL:");
-  console.log(`    - Workcenters: ${cache.workcenters.ttl / 1000}s`);
-  console.log(`    - Tags: ${cache.tags.ttl / 1000}s`);
-  console.log(`    - Workorders: ${cache.workorders.ttl / 1000}s`);
-  console.log("===============================================");
-  console.log("");
+
+// Server HTTP
+http.createServer(app).listen(PORT, "0.0.0.0", () => {
+  console.log(`  HTTP:  http://0.0.0.0:${PORT}`);
 });
+
+// Server HTTPS (per scanner barcode su iOS)
+const certsPath = path.join(__dirname, "certs");
+if (
+  fs.existsSync(path.join(certsPath, "key.pem")) &&
+  fs.existsSync(path.join(certsPath, "cert.pem"))
+) {
+  const httpsOptions = {
+    key: fs.readFileSync(path.join(certsPath, "key.pem")),
+    cert: fs.readFileSync(path.join(certsPath, "cert.pem")),
+  };
+
+  https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", () => {
+    console.log(`  HTTPS: https://0.0.0.0:${HTTPS_PORT}`);
+  });
+}
+
+console.log("");
+console.log("===============================================");
+console.log("  ORDINI DI LAVORO - PIDUEMME v2.3");
+console.log("  + Cache lato server");
+console.log("===============================================");
+console.log(`  Odoo: ${process.env.ODOO_URL}`);
+console.log("");
+console.log("  Cache TTL:");
+console.log(`    - Workcenters: ${cache.workcenters.ttl / 1000}s`);
+console.log(`    - Tags: ${cache.tags.ttl / 1000}s`);
+console.log(`    - Workorders: ${cache.workorders.ttl / 1000}s`);
+console.log("===============================================");
+console.log("");

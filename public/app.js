@@ -487,13 +487,11 @@ function renderWorkcenters() {
   grid.innerHTML = state.workcenters
     .map((wc) => {
       const opType = normalizeOpType(wc.operation_type);
-      const badgeClass = opType || "";
 
       return `
-            <div class="workcenter-card" data-id="${wc.id}" data-color="${wc.color || 0}" onclick="selectWorkcenter(${wc.id})">
+            <div class="workcenter-card ${opType ? "op-" + opType : ""}" data-id="${wc.id}" onclick="selectWorkcenter(${wc.id})">
                 <div class="card-name">${escapeHtml(wc.name)}</div>
                 ${wc.code ? `<div class="card-code">${escapeHtml(wc.code)}</div>` : ""}
-                ${wc.operation_type ? `<div class="operation-badge ${badgeClass}">${escapeHtml(wc.operation_type)}</div>` : ""}
                 <div class="card-counts">
                     <span class="count-badge active">🔄 ${wc.progress_count || 0}</span>
                     <span class="count-badge ready">⏳ ${wc.ready_count || 0}</span>
@@ -549,7 +547,8 @@ function renderWorkorders() {
   const activeGrid = $("activeWorkorderGrid");
   const readyGrid = $("readyWorkorderGrid");
 
-  const filterWo = (wo) => {
+  // Filtro per tab "Pronti": compatibilità + eventuale filtro workcenter
+  const filterReady = (wo) => {
     const compatible = isCompatible(wo, state.selectedWorkcenter);
     const isCurrent = wo.workcenter_id?.[0] === state.selectedWorkcenter?.id;
     if (state.filterCompatible && !compatible) return false;
@@ -557,22 +556,19 @@ function renderWorkorders() {
     return true;
   };
 
-  const activeFiltered = state.workorders.active.filter(filterWo);
-  const readyFiltered = state.workorders.ready.filter(filterWo);
+  // Filtro per tab "Attivi": SOLO quelli del workcenter corrente
+  const filterActive = (wo) => {
+    const isCurrent = wo.workcenter_id?.[0] === state.selectedWorkcenter?.id;
+    return isCurrent;
+  };
+
+  const activeFiltered = state.workorders.active.filter(filterActive);
+  const readyFiltered = state.workorders.ready.filter(filterReady);
 
   $("countActive").textContent = activeFiltered.length;
   $("countReady").textContent = readyFiltered.length;
 
-  const totalActive = state.workorders.active.length;
-
-  let infoText = "";
-  if (activeFiltered.length > 0) {
-    infoText = `${activeFiltered.length} attive`;
-    if (activeFiltered.length < totalActive) {
-      infoText += ` (${totalActive - activeFiltered.length} nascoste)`;
-    }
-  }
-  $("activeInfoText").textContent = infoText;
+  $("activeInfoText").textContent = "";
 
   const sortFn = (a, b) => {
     const aOk = a.workcenter_id?.[0] === state.selectedWorkcenter?.id;
@@ -581,18 +577,9 @@ function renderWorkorders() {
   };
 
   if (activeFiltered.length === 0) {
-    setEmpty(
-      activeGrid,
-      "✨",
-      state.filterCompatible
-        ? "Nessuna lavorazione compatibile attiva"
-        : "Nessuna lavorazione attiva",
-    );
+    setEmpty(activeGrid, "✨", "Nessuna lavorazione attiva");
   } else {
-    activeGrid.innerHTML = [...state.workorders.active]
-      .sort(sortFn)
-      .map(renderWorkorderCard)
-      .join("");
+    activeGrid.innerHTML = activeFiltered.map(renderWorkorderCard).join("");
   }
 
   if (readyFiltered.length === 0) {
@@ -866,30 +853,43 @@ function showWorkorderModal(wo) {
   }
 
   const wcId = wo.workcenter_id ? wo.workcenter_id[0] : null;
-  const needsReassign =
-    state.selectedWorkcenter && wcId !== state.selectedWorkcenter.id;
-  const compatible = isCompatible(wo, state.selectedWorkcenter);
+
+  // Nascondi sempre i pulsanti workcenter inizialmente
+  $("modalWorkcenterButtons").classList.add("hidden");
 
   const reassignWarning = $("modalWorkcenterWarning");
-  if (needsReassign) {
-    reassignWarning.classList.remove("hidden");
-    $("modalTargetWorkcenter").textContent = state.selectedWorkcenter.name;
+  const incompatWarning = $("modalIncompatibleWarning");
+
+  if (state.selectedWorkcenter) {
+    // Workcenter già selezionato - comportamento normale
+    const needsReassign = wcId !== state.selectedWorkcenter.id;
+    const compatible = isCompatible(wo, state.selectedWorkcenter);
+
+    if (needsReassign) {
+      reassignWarning.classList.remove("hidden");
+      $("modalTargetWorkcenter").textContent = state.selectedWorkcenter.name;
+    } else {
+      reassignWarning.classList.add("hidden");
+    }
+
+    if (!compatible) {
+      incompatWarning.classList.remove("hidden");
+      $("modalWoOpType").textContent = wo.operation_type || "?";
+      $("modalWcOpType").textContent =
+        state.selectedWorkcenter.operation_type || "?";
+    } else {
+      incompatWarning.classList.add("hidden");
+    }
   } else {
     reassignWarning.classList.add("hidden");
-  }
-
-  const incompatWarning = $("modalIncompatibleWarning");
-  if (!compatible && state.selectedWorkcenter) {
-    incompatWarning.classList.remove("hidden");
-    $("modalWoOpType").textContent = wo.operation_type || "?";
-    $("modalWcOpType").textContent =
-      state.selectedWorkcenter.operation_type || "?";
-  } else {
     incompatWarning.classList.add("hidden");
   }
 
   const actions = $("modalActions");
   if (wo.state === "ready") {
+    const compatible = state.selectedWorkcenter
+      ? isCompatible(wo, state.selectedWorkcenter)
+      : true;
     const btnClass = compatible ? "btn-success" : "btn-danger";
     const btnText = compatible ? "▶️ Avvia" : "⚠️ Avvia comunque";
     actions.innerHTML = `
@@ -909,6 +909,90 @@ function showWorkorderModal(wo) {
   $("modalOverlay").classList.remove("hidden");
 }
 
+/**
+ * Mostra i pulsanti per scegliere il workcenter
+ */
+function showWorkcenterButtons() {
+  const wo = state.selectedWorkorder;
+  if (!wo) return;
+
+  const woOpType = normalizeOpType(wo.operation_type);
+  const grid = $("workcenterButtonsGrid");
+
+  // Ordina: prima compatibili, poi gli altri
+  const sortedWc = [...state.workcenters].sort((a, b) => {
+    const aCompat = normalizeOpType(a.operation_type) === woOpType || !woOpType;
+    const bCompat = normalizeOpType(b.operation_type) === woOpType || !woOpType;
+    if (aCompat && !bCompat) return -1;
+    if (!aCompat && bCompat) return 1;
+    return 0;
+  });
+
+  grid.innerHTML = sortedWc
+    .map((wc) => {
+      const wcOpType = normalizeOpType(wc.operation_type);
+      const isCompat = wcOpType === woOpType || !woOpType || !wcOpType;
+      const btnClass = isCompat ? "wc-btn-compatible" : "wc-btn-incompatible";
+      const opClass = wcOpType ? "op-" + wcOpType : "";
+
+      return `<button class="wc-btn ${btnClass} ${opClass}" onclick="selectWorkcenterAndStart(${wc.id})">
+        ${escapeHtml(wc.name)}
+      </button>`;
+    })
+    .join("");
+
+  $("modalWorkcenterButtons").classList.remove("hidden");
+}
+
+/**
+ * Seleziona workcenter e avvia il WO
+ */
+async function selectWorkcenterAndStart(workcenterId) {
+  if (!state.selectedWorkorder || state.isActionInProgress) return;
+
+  state.isActionInProgress = true;
+  const wo = state.selectedWorkorder;
+
+  // Disabilita tutti i pulsanti
+  const buttons = $("workcenterButtonsGrid").querySelectorAll("button");
+  buttons.forEach((btn) => (btn.disabled = true));
+
+  // Evidenzia il pulsante selezionato
+  const selectedBtn = [...buttons].find((btn) =>
+    btn.onclick.toString().includes(workcenterId),
+  );
+  if (selectedBtn) {
+    selectedBtn.textContent = "Avvio...";
+  }
+
+  try {
+    const res = await fetch(`/api/workorders/${wo.id}/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetWorkcenterId: workcenterId }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    const result = await res.json();
+
+    let msg = `✓ Avviato: ${wo.display_name || wo.name}`;
+    if (result.workcenterChanged) msg += " (riassegnato)";
+    showToast(msg, "success");
+
+    closeModal();
+    clearSearch();
+    await loadAllWorkorders();
+  } catch (e) {
+    showToast(`Errore: ${e.message}`, "error");
+    buttons.forEach((btn) => (btn.disabled = false));
+    if (selectedBtn) {
+      selectedBtn.textContent =
+        state.workcenters.find((wc) => wc.id === workcenterId)?.name ||
+        "Riprova";
+    }
+    state.isActionInProgress = false;
+  }
+}
+
 const closeModal = () => {
   $("modalOverlay").classList.add("hidden");
   state.selectedWorkorder = null;
@@ -922,6 +1006,14 @@ const closeModal = () => {
 async function confirmStart() {
   if (!state.selectedWorkorder || state.isActionInProgress) return;
 
+  // Se non c'è workcenter selezionato, mostra i pulsanti per scegliere
+  if (!state.selectedWorkcenter) {
+    showWorkcenterButtons();
+    return;
+  }
+
+  const targetWorkcenterId = state.selectedWorkcenter.id;
+
   state.isActionInProgress = true;
   const wo = state.selectedWorkorder;
   const btn = $("btnConfirmStart");
@@ -934,7 +1026,7 @@ async function confirmStart() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        targetWorkcenterId: state.selectedWorkcenter?.id,
+        targetWorkcenterId: targetWorkcenterId,
       }),
     });
     if (!res.ok) throw new Error((await res.json()).error);
@@ -1858,10 +1950,112 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === $("detailsModalOverlay")) closeDetailsModal();
   });
 
+  // Scanner barcode
+  $("btnScan").addEventListener("click", openScanner);
+  $("scannerModalClose").addEventListener("click", closeScanner);
+  $("scannerModalOverlay").addEventListener("click", (e) => {
+    if (e.target === $("scannerModalOverlay")) closeScanner();
+  });
+
   document.addEventListener("click", (e) => {
     if (!$("toolbar").contains(e.target)) hideSearchResults();
   });
 });
+
+// ===============================================
+// === BARCODE SCANNER ===========================
+// ===============================================
+
+let html5QrCode = null;
+
+/**
+ * Apre il modale scanner e avvia la fotocamera
+ */
+async function openScanner() {
+  $("scannerModalOverlay").classList.remove("hidden");
+
+  // Inizializza lo scanner se non esiste
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode("scannerContainer");
+  }
+
+  try {
+    // Configurazione ottimizzata per barcode
+    const config = {
+      fps: 15, // Più frame al secondo
+      qrbox: { width: 300, height: 120 }, // Area rettangolare ottimale per barcode
+      aspectRatio: 1.5,
+      // Formati barcode comuni (esclude QR per velocizzare)
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.CODE_93,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.CODABAR,
+      ],
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true, // Usa API nativa se disponibile
+      },
+    };
+
+    await html5QrCode.start(
+      { facingMode: "environment" }, // Fotocamera posteriore
+      config,
+      onScanSuccess,
+      onScanFailure,
+    );
+  } catch (err) {
+    console.error("[Scanner] Errore avvio:", err);
+    showToast("Impossibile accedere alla fotocamera", "error");
+    closeScanner();
+  }
+}
+
+/**
+ * Chiude lo scanner e ferma la fotocamera
+ */
+async function closeScanner() {
+  if (html5QrCode && html5QrCode.isScanning) {
+    try {
+      await html5QrCode.stop();
+    } catch (err) {
+      console.error("[Scanner] Errore stop:", err);
+    }
+  }
+  $("scannerModalOverlay").classList.add("hidden");
+}
+
+/**
+ * Callback quando viene letto un codice
+ */
+function onScanSuccess(decodedText, decodedResult) {
+  console.log("[Scanner] Codice letto:", decodedText);
+
+  // Vibrazione feedback
+  if (navigator.vibrate) {
+    navigator.vibrate(200);
+  }
+
+  // Chiudi scanner
+  closeScanner();
+
+  // Inserisci il codice nel campo ricerca e cerca
+  $("searchInput").value = decodedText;
+  handleSearchInput();
+
+  showToast(`Codice scansionato: ${decodedText}`, "success");
+}
+
+/**
+ * Callback errore scansione (chiamato continuamente, ignoriamo)
+ */
+function onScanFailure(error) {
+  // Ignora - viene chiamato ad ogni frame senza match
+}
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(() => {});
