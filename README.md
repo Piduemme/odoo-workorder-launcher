@@ -1,83 +1,153 @@
-# Odoo Workorder Launcher
+# Ordini di Lavoro - Piduemme
 
-Interfaccia Kanban touch-friendly per avviare work orders in Odoo MRP.
+Interfaccia web touch-friendly per gestire work orders Odoo MRP su tablet in produzione.
 
 ## Funzionalità
 
-- Visualizza centri di lavoro (workcenters) come card colorate
-- Seleziona un centro per vedere i work orders pronti (`ready`)
-- Click su un work order per avviarlo (porta in stato `progress`)
-- Interfaccia ottimizzata per tablet in produzione
+### Gestione Work Orders
+- Visualizzazione centri di lavoro come card colorate
+- Avvio, pausa e completamento work orders
+- Riassegnazione dinamica a centri diversi
+- Ricerca work orders per MO, prodotto, operazione
+- Auto-refresh configurabile (10s, 30s, 1m)
+- Filtri: solo compatibili, solo questo centro, vista compatta
+- Dark mode
+
+### Editor Schede Tecniche (v2.4)
+- Modifica nome prodotto e quantità MO (click-to-edit)
+- Gestione specifiche tecniche (aggiungi/modifica/elimina)
+- Gestione componenti BOM con ricerca prodotti
+- Validazione totale componenti (deve essere 100%)
+- Salvataggio manuale con conferma modifiche
+
+### PWA
+- Installabile come app nativa
+- Service Worker per caching assets
+- Funziona offline (solo lettura)
 
 ## Requisiti
 
 - Node.js 18+
-- Accesso API a Odoo Online (XML-RPC)
+- Accesso a istanza Odoo con modulo MRP
+- Modelli custom: `machine.type`, `machine.type.key`, `machine.type.product`
 
 ## Installazione
 
 ```bash
-# Clona il repository
-git clone https://github.com/tuouser/odoo-workorder-launcher.git
+# Clona repository
+git clone https://github.com/Piduemme/odoo-workorder-launcher.git
 cd odoo-workorder-launcher
 
 # Installa dipendenze
 npm install
 
-# Configura le credenziali Odoo
+# Configura credenziali
 cp .env.example .env
-# Modifica .env con i tuoi dati
+# Modifica .env con le tue credenziali Odoo
+
+# Avvia server
+node server.js
 ```
 
 ## Configurazione
 
-Modifica il file `.env`:
+Crea un file `.env` con:
 
 ```env
 ODOO_URL=https://tua-istanza.odoo.com
 ODOO_DB=nome-database
 ODOO_USER=email@esempio.com
 ODOO_API_KEY=tua-api-key
-
 PORT=3000
 ```
 
-## Avvio
+## Utilizzo
 
-```bash
-# Produzione
-npm start
+1. Apri `http://localhost:3000` su tablet o browser
+2. Seleziona un centro di lavoro
+3. Visualizza work orders pronti o attivi
+4. Clicca su un work order per avviarlo/pausarlo/completarlo
+5. Clicca "Dettagli" per aprire l'editor scheda tecnica
 
-# Sviluppo (auto-reload)
-npm run dev
-```
+## API Endpoints
 
-L'app sarà disponibile su `http://localhost:3000`
+### Work Orders
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| GET | `/api/workcenters` | Lista centri di lavoro |
+| GET | `/api/workorders` | Work orders ready/progress |
+| GET | `/api/workorders/search?q=` | Ricerca work orders |
+| POST | `/api/workorders/:id/start` | Avvia work order |
+| POST | `/api/workorders/:id/pause` | Pausa work order |
+| POST | `/api/workorders/:id/complete` | Completa work order |
 
-## Struttura
+### Schede Tecniche
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| GET | `/api/workorders/:id/specs` | Dati scheda tecnica |
+| POST | `/api/workorders/:id/specs` | Salva modifiche |
+| GET | `/api/products/search?q=` | Ricerca prodotti |
+| GET | `/api/machine-types` | Lista tipi macchina |
+| GET | `/api/spec-keys` | Lista chiavi specifiche |
+
+### Cache
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| GET | `/api/cache/status` | Stato cache |
+| POST | `/api/cache/invalidate` | Invalida cache |
+
+## Cache TTL
+
+- Workcenters: 30 minuti
+- Tags: 1 ora
+- Work orders: 15 secondi
+- Machine types: 30 minuti
+- Spec keys: 30 minuti
+
+## Struttura Progetto
 
 ```
 odoo-workorder-launcher/
 ├── server.js          # Server Express + API REST
-├── odoo-api.js        # Modulo connessione Odoo XML-RPC
+├── odoo-api.js        # Client XML-RPC per Odoo
 ├── public/
-│   ├── index.html     # Pagina principale
-│   ├── style.css      # Stili CSS (Kanban)
-│   └── app.js         # Frontend JavaScript
-├── .env               # Configurazione (non versionato)
+│   ├── index.html     # UI principale
+│   ├── app.js         # Logica frontend
+│   ├── style.css      # Stili CSS
+│   ├── sw.js          # Service Worker
+│   └── manifest.json  # PWA manifest
 ├── .env.example       # Template configurazione
-└── package.json
+├── CLAUDE.md          # Guida per Claude Code
+└── README.md          # Questa documentazione
 ```
 
-## API Endpoints
+## Changelog
 
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| GET | `/api/test` | Test connessione Odoo |
-| GET | `/api/workcenters` | Lista centri di lavoro attivi |
-| GET | `/api/workorders/:id` | Work orders pronti per un workcenter |
-| POST | `/api/workorders/:id/start` | Avvia un work order |
+### v2.4 (2024-12)
+- Editor schede tecniche integrato nel modale dettagli
+- Click-to-edit per nome prodotto e quantità
+- Gestione specifiche tecniche e componenti BOM
+- Ricerca prodotti con debounce e cache
+- Porting da odoo-modifiche-schede (GAS)
 
-## License
+### v2.3
+- Cache lato server con TTL configurabile
+- Stile Piduemme (verde #36a763)
+- Rinominato in "Ordini di Lavoro"
 
-MIT
+### v2.2
+- Gestione errori robusta con retry automatico
+- Timeout e invalidazione sessione
+
+### v2.1
+- Filtro operazioni compatibili
+
+### v2.0
+- Auto-refresh, dark mode, filtri
+- Pausa/completa work orders
+- Timer elapsed time
+- PWA con Service Worker
+
+## Licenza
+
+Proprietario: Piduemme S.r.l.
