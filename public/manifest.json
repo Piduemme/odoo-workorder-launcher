@@ -1,11 +1,11 @@
 {
-    "name": "Odoo Workorder Launcher",
+    "name": "Workorder Launcher - Piduemme",
     "short_name": "Workorders",
     "description": "Avvia e gestisci work orders Odoo MRP",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#714B67",
-    "theme_color": "#714B67",
+    "background_color": "#36a763",
+    "theme_color": "#36a763",
     "orientation": "any",
     "icons": [
         {
