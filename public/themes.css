@@ -1,0 +1,894 @@
+/* ===============================================
+   === THEMES.CSS - SISTEMA TEMI v1.0 ============
+   ===============================================
+   
+   4 temi disponibili:
+   - default (Piduemme originale)
+   - nordic (Minimal Nordic)
+   - industrial (Industrial Bold)
+   - soft (Soft Modern)
+   
+   Ogni tema sovrascrive le variabili CSS e aggiunge
+   stili specifici tramite [data-style="nome-tema"]
+*/
+
+/* =============================================
+   TEMA A - MINIMAL NORDIC
+   =============================================
+   Filosofia: Spazio, luce, semplicità scandinava
+   - Tanto bianco/grigio chiaro
+   - Verde Piduemme come unico accento
+   - Ombre quasi assenti, bordi sottilissimi
+   - Font Ubuntu Light per testi
+*/
+
+[data-style="nordic"] {
+    /* Colori base */
+    --bg-primary: #fafafa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f5f5f5;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b6b6b;
+    --text-muted: #9a9a9a;
+    --border-color: rgba(0, 0, 0, 0.06);
+    
+    /* Ombre minimaliste */
+    --shadow-sm: none;
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.06);
+    
+    /* Bordi più arrotondati */
+    --border-radius: 10px;
+    --border-radius-lg: 16px;
+}
+
+/* Header Nordic */
+[data-style="nordic"] .header {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: none;
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-style="nordic"] .header h1 {
+    font-weight: 400;
+    font-size: 1.25rem;
+}
+
+[data-style="nordic"] .header h1 span.highlight {
+    color: var(--color-primary);
+}
+
+[data-style="nordic"] .header-btn {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+[data-style="nordic"] .header-btn:hover {
+    background: rgba(54, 167, 99, 0.1);
+    color: var(--color-primary);
+}
+
+[data-style="nordic"] .connection-status {
+    background: rgba(54, 167, 99, 0.1);
+    color: var(--color-primary);
+}
+
+/* Toolbar Nordic */
+[data-style="nordic"] .toolbar {
+    background: var(--bg-secondary);
+    box-shadow: none;
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-style="nordic"] .search-bar {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+[data-style="nordic"] .search-bar:focus-within {
+    border-color: var(--color-primary);
+    background: var(--bg-secondary);
+}
+
+/* Cards Nordic */
+[data-style="nordic"] .workcenter-card,
+[data-style="nordic"] .workorder-card {
+    border: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    box-shadow: none;
+}
+
+[data-style="nordic"] .workcenter-card:hover,
+[data-style="nordic"] .workorder-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: none;
+    transform: translateY(-2px);
+}
+
+/* Rimuovi gradienti dalle card workcenter */
+[data-style="nordic"] .workcenter-card.op-estrusione,
+[data-style="nordic"] .workcenter-card.op-saldatura,
+[data-style="nordic"] .workcenter-card.op-stampa {
+    background: var(--bg-secondary);
+}
+
+[data-style="nordic"] .workcenter-card.op-estrusione:hover,
+[data-style="nordic"] .workcenter-card.op-saldatura:hover,
+[data-style="nordic"] .workcenter-card.op-stampa:hover {
+    background: var(--bg-secondary);
+}
+
+/* Tabs Nordic */
+[data-style="nordic"] .tabs {
+    background: transparent;
+    padding: 0;
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0;
+}
+
+[data-style="nordic"] .tab {
+    border-radius: 0;
+    position: relative;
+}
+
+[data-style="nordic"] .tab.active {
+    background: transparent;
+    color: var(--color-primary);
+    box-shadow: none;
+}
+
+[data-style="nordic"] .tab.active::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--color-primary);
+}
+
+[data-style="nordic"] .tab-count {
+    background: var(--bg-primary);
+}
+
+[data-style="nordic"] .tab.active .tab-count {
+    background: rgba(54, 167, 99, 0.15);
+    color: var(--color-primary);
+}
+
+/* Modal Nordic */
+[data-style="nordic"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+}
+
+[data-style="nordic"] .modal-header {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-style="nordic"] .modal-close {
+    background: transparent;
+    color: var(--text-muted);
+}
+
+[data-style="nordic"] .modal-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+/* Bottoni Nordic */
+[data-style="nordic"] .btn-primary,
+[data-style="nordic"] .btn-success,
+[data-style="nordic"] .toolbar-btn {
+    border-radius: 8px;
+}
+
+
+/* =============================================
+   TEMA B - INDUSTRIAL BOLD
+   =============================================
+   Filosofia: Robusto, contrastato, industriale
+   - Header scuro dominante
+   - Colori saturi e distintivi per operazioni
+   - Cards con bordo sinistro colorato prominente
+   - Più grassetto, più contrasto
+*/
+
+[data-style="industrial"] {
+    /* Colori base */
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e8eaed;
+    --bg-dark: #1e2a38;
+    --bg-dark-hover: #2a3a4d;
+    --text-primary: #1a1a1a;
+    --text-secondary: #5a5a5a;
+    --text-muted: #8a8a8a;
+    --border-color: rgba(0, 0, 0, 0.12);
+    
+    /* Colori operazioni più saturi */
+    --color-estrusione: #16a34a;
+    --color-saldatura: #ea580c;
+    --color-stampa: #2563eb;
+    
+    /* Ombre più marcate */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+    
+    /* Bordi meno arrotondati */
+    --border-radius: 8px;
+    --border-radius-lg: 12px;
+}
+
+/* Header Industrial - Scuro */
+[data-style="industrial"] .header {
+    background: var(--bg-dark);
+    color: white;
+}
+
+[data-style="industrial"] .header h1 {
+    font-weight: 500;
+    letter-spacing: -0.3px;
+}
+
+[data-style="industrial"] .header-btn {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-style="industrial"] .header-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+[data-style="industrial"] .connection-status {
+    background: rgba(22, 163, 74, 0.2);
+    border: 1px solid rgba(22, 163, 74, 0.3);
+}
+
+[data-style="industrial"] .connection-status .status-dot.connected {
+    background: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+}
+
+/* Toolbar Industrial */
+[data-style="industrial"] .toolbar {
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-style="industrial"] .search-bar {
+    border-width: 2px;
+}
+
+[data-style="industrial"] .btn-scan {
+    background: var(--bg-dark);
+}
+
+[data-style="industrial"] .btn-scan:hover {
+    background: var(--bg-dark-hover);
+}
+
+/* Cards Industrial */
+[data-style="industrial"] .workcenter-card,
+[data-style="industrial"] .workorder-card {
+    border-left-width: 5px;
+    box-shadow: var(--shadow-sm);
+}
+
+[data-style="industrial"] .workcenter-card:hover,
+[data-style="industrial"] .workorder-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+}
+
+[data-style="industrial"] .workcenter-card .card-name,
+[data-style="industrial"] .workorder-card .card-name {
+    font-weight: 700;
+}
+
+/* Stats grandi per workcenter */
+[data-style="industrial"] .workcenter-card .count-badge {
+    font-size: 1.1rem;
+    padding: 6px 14px;
+    font-weight: 700;
+}
+
+/* Badge operazioni Industrial */
+[data-style="industrial"] .workcenter-type-badge,
+[data-style="industrial"] .operation-badge {
+    font-weight: 700;
+}
+
+[data-style="industrial"] .workcenter-type-badge.estrusione,
+[data-style="industrial"] .operation-badge.estrusione {
+    background: var(--color-estrusione);
+}
+
+[data-style="industrial"] .workcenter-type-badge.saldatura,
+[data-style="industrial"] .operation-badge.saldatura {
+    background: var(--color-saldatura);
+}
+
+[data-style="industrial"] .workcenter-type-badge.stampa,
+[data-style="industrial"] .operation-badge.stampa {
+    background: var(--color-stampa);
+}
+
+/* Tabs Industrial - Pill style */
+[data-style="industrial"] .tabs {
+    background: var(--bg-secondary);
+    padding: 6px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-style="industrial"] .tab {
+    font-weight: 500;
+}
+
+[data-style="industrial"] .tab.active {
+    background: var(--color-primary);
+}
+
+/* Modal Industrial */
+[data-style="industrial"] .modal-overlay {
+    background: rgba(30, 42, 56, 0.8);
+}
+
+[data-style="industrial"] .modal-header {
+    background: var(--bg-dark);
+}
+
+[data-style="industrial"] .modal-close {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-style="industrial"] .modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Bottoni Industrial */
+[data-style="industrial"] .btn-secondary {
+    background: var(--bg-primary);
+}
+
+
+/* =============================================
+   TEMA C - SOFT MODERN
+   =============================================
+   Filosofia: Morbido, arrotondato, accogliente
+   - Sfondo con leggero gradiente
+   - Bordi molto arrotondati
+   - Colori pastello per le operazioni
+   - Ombre diffuse e morbide
+   - Effetto glassmorphism
+*/
+
+[data-style="soft"] {
+    /* Colori base con gradiente */
+    --bg-primary: #f0f4f8;
+    --bg-secondary: rgba(255, 255, 255, 0.85);
+    --bg-tertiary: #e2e8f0;
+    --text-primary: #334155;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border-color: rgba(0, 0, 0, 0.05);
+    
+    /* Colori pastello operazioni */
+    --color-estrusione: #22c55e;
+    --color-estrusione-soft: #dcfce7;
+    --color-saldatura: #f97316;
+    --color-saldatura-soft: #fed7aa;
+    --color-stampa: #3b82f6;
+    --color-stampa-soft: #dbeafe;
+    
+    /* Ombre morbide */
+    --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
+    --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08);
+    --shadow-glow: 0 0 40px rgba(54, 167, 99, 0.15);
+    
+    /* Bordi molto arrotondati */
+    --border-radius: 14px;
+    --border-radius-lg: 20px;
+    --border-radius-xl: 28px;
+    --border-radius-full: 9999px;
+}
+
+/* Body con gradiente */
+[data-style="soft"] body {
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+    background-attachment: fixed;
+}
+
+/* Header Soft */
+[data-style="soft"] .header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+    border-bottom: none;
+}
+
+[data-style="soft"] .header h1 {
+    font-weight: 400;
+    color: var(--text-primary);
+}
+
+[data-style="soft"] .header-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-radius: var(--border-radius);
+}
+
+[data-style="soft"] .header-btn:hover {
+    background: rgba(54, 167, 99, 0.15);
+    color: var(--color-primary);
+    transform: scale(1.05);
+}
+
+[data-style="soft"] .connection-status {
+    background: linear-gradient(135deg, rgba(54, 167, 99, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+    color: #059669;
+    border-radius: var(--border-radius-full);
+}
+
+/* Toolbar Soft */
+[data-style="soft"] .toolbar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: none;
+}
+
+[data-style="soft"] .search-bar {
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: var(--border-radius-full);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+[data-style="soft"] .search-bar:focus-within {
+    background: white;
+    box-shadow: var(--shadow-md), 0 0 0 3px rgba(54, 167, 99, 0.15);
+}
+
+[data-style="soft"] .toolbar-btn {
+    border-radius: var(--border-radius-full);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #059669 100%);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="soft"] .toolbar-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 30px rgba(54, 167, 99, 0.25);
+}
+
+[data-style="soft"] .btn-scan {
+    border-radius: var(--border-radius-full);
+}
+
+/* Cards Soft - Glassmorphism */
+[data-style="soft"] .workcenter-card,
+[data-style="soft"] .workorder-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-left: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+[data-style="soft"] .workcenter-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-primary) 0%, #059669 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+[data-style="soft"] .workcenter-card:hover::before {
+    opacity: 1;
+}
+
+[data-style="soft"] .workcenter-card:hover,
+[data-style="soft"] .workorder-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Rimuovi gradienti dalle card workcenter */
+[data-style="soft"] .workcenter-card.op-estrusione,
+[data-style="soft"] .workcenter-card.op-saldatura,
+[data-style="soft"] .workcenter-card.op-stampa {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+/* Work order attivi con glow */
+[data-style="soft"] .workorder-card.active::after {
+    content: "";
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 10px;
+    height: 10px;
+    background: var(--color-success);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--color-success);
+    animation: soft-glow 2s ease-in-out infinite;
+}
+
+@keyframes soft-glow {
+    0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--color-success); }
+    50% { opacity: 0.6; box-shadow: 0 0 20px var(--color-success); }
+}
+
+/* Timer card Soft */
+[data-style="soft"] .workorder-card .card-timer {
+    border-radius: var(--border-radius-full);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #059669 100%);
+}
+
+/* Badge operazioni Soft - Pastello */
+[data-style="soft"] .workcenter-type-badge,
+[data-style="soft"] .operation-badge {
+    border-radius: var(--border-radius-full);
+}
+
+[data-style="soft"] .workcenter-type-badge.estrusione,
+[data-style="soft"] .operation-badge.estrusione {
+    background: var(--color-estrusione-soft);
+    color: #15803d;
+}
+
+[data-style="soft"] .workcenter-type-badge.saldatura,
+[data-style="soft"] .operation-badge.saldatura {
+    background: var(--color-saldatura-soft);
+    color: #c2410c;
+}
+
+[data-style="soft"] .workcenter-type-badge.stampa,
+[data-style="soft"] .operation-badge.stampa {
+    background: var(--color-stampa-soft);
+    color: #1d4ed8;
+}
+
+/* Count badge Soft */
+[data-style="soft"] .count-badge {
+    border-radius: var(--border-radius-full);
+}
+
+/* State badge Soft */
+[data-style="soft"] .card-state {
+    border-radius: var(--border-radius-full);
+}
+
+/* Tabs Soft - Pill arrotondate */
+[data-style="soft"] .tabs {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 6px;
+    border-radius: var(--border-radius-full);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-style="soft"] .tab {
+    border-radius: var(--border-radius-full);
+    padding: 12px 28px;
+}
+
+[data-style="soft"] .tab.active {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #059669 100%);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="soft"] .tab-count {
+    border-radius: var(--border-radius-full);
+}
+
+/* Modal Soft */
+[data-style="soft"] .modal-overlay {
+    background: rgba(51, 65, 85, 0.4);
+    backdrop-filter: blur(8px);
+}
+
+[data-style="soft"] .modal {
+    border-radius: var(--border-radius-xl);
+}
+
+[data-style="soft"] .modal-header {
+    background: white;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+    border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+}
+
+[data-style="soft"] .modal-close {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-radius: var(--border-radius);
+}
+
+[data-style="soft"] .modal-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Bottoni Soft */
+[data-style="soft"] .btn {
+    border-radius: var(--border-radius-lg);
+}
+
+[data-style="soft"] .btn-primary,
+[data-style="soft"] .btn-success {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #059669 100%);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="soft"] .btn-primary:hover,
+[data-style="soft"] .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(54, 167, 99, 0.3);
+}
+
+[data-style="soft"] .btn-secondary {
+    background: var(--bg-tertiary);
+    border: none;
+}
+
+[data-style="soft"] .btn-info {
+    background: var(--color-stampa-soft);
+    color: #1d4ed8;
+}
+
+/* Toast Soft */
+[data-style="soft"] .toast {
+    border-radius: var(--border-radius-lg);
+}
+
+
+/* =============================================
+   DARK MODE PER TUTTI I TEMI
+   ============================================= */
+
+/* Nordic Dark */
+[data-style="nordic"][data-theme="dark"] {
+    --bg-primary: #0f0f0f;
+    --bg-secondary: #1a1a1a;
+    --bg-tertiary: #252525;
+    --text-primary: #f0f0f0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666666;
+    --border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Industrial Dark */
+[data-style="industrial"][data-theme="dark"] {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --bg-dark: #010409;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --text-muted: #484f58;
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-style="industrial"][data-theme="dark"] .header {
+    background: var(--bg-dark);
+}
+
+/* Soft Dark */
+[data-style="soft"][data-theme="dark"] {
+    --bg-primary: #1e1e2e;
+    --bg-secondary: rgba(30, 30, 46, 0.9);
+    --bg-tertiary: #313244;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --text-muted: #6c7086;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --color-estrusione-soft: rgba(34, 197, 94, 0.2);
+    --color-saldatura-soft: rgba(249, 115, 22, 0.2);
+    --color-stampa-soft: rgba(59, 130, 246, 0.2);
+}
+
+[data-style="soft"][data-theme="dark"] body {
+    background: linear-gradient(135deg, #1e1e2e 0%, #181825 100%);
+}
+
+[data-style="soft"][data-theme="dark"] .header {
+    background: rgba(30, 30, 46, 0.95);
+}
+
+[data-style="soft"][data-theme="dark"] .toolbar {
+    background: rgba(30, 30, 46, 0.95);
+}
+
+[data-style="soft"][data-theme="dark"] .workcenter-card,
+[data-style="soft"][data-theme="dark"] .workorder-card {
+    background: rgba(30, 30, 46, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-style="soft"][data-theme="dark"] .tabs {
+    background: rgba(30, 30, 46, 0.9);
+}
+
+[data-style="soft"][data-theme="dark"] .modal-header {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+
+/* =============================================
+   THEME SELECTOR COMPONENT
+   ============================================= */
+
+.theme-selector {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.theme-selector-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 8px;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: 'Ubuntu', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.theme-selector-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.theme-selector-btn .theme-icon {
+    font-size: 1rem;
+}
+
+.theme-selector-btn .theme-name {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Dropdown */
+.theme-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    min-width: 180px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.theme-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    color: var(--text-primary);
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 0.9rem;
+}
+
+.theme-option:first-child {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.theme-option:last-child {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.theme-option:hover {
+    background: rgba(54, 167, 99, 0.1);
+}
+
+.theme-option.active {
+    background: rgba(54, 167, 99, 0.15);
+    color: var(--color-primary);
+}
+
+.theme-option .theme-preview {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+.theme-option[data-style="default"] .theme-preview {
+    background: linear-gradient(135deg, #36a763 50%, #125632 50%);
+}
+
+.theme-option[data-style="nordic"] .theme-preview {
+    background: #fafafa;
+    border-color: #e0e0e0;
+}
+
+.theme-option[data-style="industrial"] .theme-preview {
+    background: linear-gradient(180deg, #1e2a38 50%, #f0f2f5 50%);
+}
+
+.theme-option[data-style="soft"] .theme-preview {
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+    border-color: rgba(54, 167, 99, 0.3);
+}
+
+/* Adatta stili del selettore ai vari temi */
+[data-style="nordic"] .theme-selector-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+[data-style="nordic"] .theme-selector-btn:hover {
+    background: rgba(54, 167, 99, 0.15);
+    color: var(--color-primary);
+}
+
+[data-style="soft"] .theme-selector-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-radius: var(--border-radius-full);
+}
+
+[data-style="soft"] .theme-dropdown {
+    border-radius: var(--border-radius-lg);
+}
+
+[data-style="soft"] .theme-option:first-child {
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+[data-style="soft"] .theme-option:last-child {
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .theme-selector-btn .theme-name {
+        display: none;
+    }
+    
+    .theme-dropdown {
+        right: -10px;
+    }
+}

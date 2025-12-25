@@ -9,7 +9,13 @@
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#36a763" />
         <title>Ordini di Lavoro - Piduemme</title>
+        <!-- Font Ubuntu con Light weight -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+        <!-- Stili -->
         <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="themes.css" />
         <link rel="manifest" href="manifest.json" />
         <!-- Libreria per scansione barcode -->
         <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -18,10 +24,36 @@
         <!-- HEADER -->
         <header class="header">
             <div class="header-left">
-                <h1>🏭 Ordini di Lavoro</h1>
+                <h1>🏭 <span class="highlight">Ordini di Lavoro</span></h1>
             </div>
             <div class="header-right">
-                <button class="header-btn" id="btnToggleTheme" title="Tema">
+                <!-- THEME SELECTOR -->
+                <div class="theme-selector" id="themeSelector">
+                    <button class="theme-selector-btn" id="themeSelectorBtn" title="Cambia stile">
+                        <span class="theme-icon">🎨</span>
+                        <span class="theme-name" id="currentThemeName">Originale</span>
+                    </button>
+                    <div class="theme-dropdown" id="themeDropdown">
+                        <button class="theme-option active" data-style="default">
+                            <span class="theme-preview"></span>
+                            <span>Originale</span>
+                        </button>
+                        <button class="theme-option" data-style="nordic">
+                            <span class="theme-preview"></span>
+                            <span>Minimal Nordic</span>
+                        </button>
+                        <button class="theme-option" data-style="industrial">
+                            <span class="theme-preview"></span>
+                            <span>Industrial Bold</span>
+                        </button>
+                        <button class="theme-option" data-style="soft">
+                            <span class="theme-preview"></span>
+                            <span>Soft Modern</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="header-btn" id="btnToggleTheme" title="Dark Mode">
                     🌙
                 </button>
                 <button
@@ -68,7 +100,7 @@
                     </select>
                 </div>
                 <button class="toolbar-btn" id="btnRefresh" title="Aggiorna">
-                    🔄
+                    🔄 <span class="btn-text">Aggiorna</span>
                 </button>
             </div>
 
@@ -458,6 +490,162 @@
         <!-- TOAST -->
         <div class="toast-container" id="toastContainer"></div>
 
+        <!-- App JS -->
         <script src="app.js"></script>
+        
+        <!-- Theme Selector JS -->
+        <script>
+            /**
+             * =============================================
+             * THEME SELECTOR - Gestione temi UI
+             * =============================================
+             * Permette di switchare tra 4 stili:
+             * - default: Piduemme originale
+             * - nordic: Minimal Nordic
+             * - industrial: Industrial Bold
+             * - soft: Soft Modern
+             */
+            
+            (function() {
+                'use strict';
+                
+                // === CONFIGURAZIONE TEMI ===
+                const THEMES = {
+                    default: { 
+                        name: 'Originale', 
+                        icon: '🏭',
+                        themeColor: '#36a763'
+                    },
+                    nordic: { 
+                        name: 'Minimal Nordic', 
+                        icon: '❄️',
+                        themeColor: '#36a763'
+                    },
+                    industrial: { 
+                        name: 'Industrial Bold', 
+                        icon: '🔧',
+                        themeColor: '#1e2a38'
+                    },
+                    soft: { 
+                        name: 'Soft Modern', 
+                        icon: '🌸',
+                        themeColor: '#36a763'
+                    }
+                };
+                
+                const STORAGE_KEY = 'piduemme-ui-style';
+                
+                // === ELEMENTI DOM ===
+                const themeSelectorBtn = document.getElementById('themeSelectorBtn');
+                const themeDropdown = document.getElementById('themeDropdown');
+                const currentThemeName = document.getElementById('currentThemeName');
+                const themeOptions = document.querySelectorAll('.theme-option');
+                const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+                
+                // === FUNZIONI ===
+                
+                /**
+                 * Applica un tema all'interfaccia
+                 * @param {string} styleName - Nome del tema (default, nordic, industrial, soft)
+                 */
+                function applyStyle(styleName) {
+                    // Validazione
+                    if (!THEMES[styleName]) {
+                        console.warn(`Tema "${styleName}" non trovato, uso default`);
+                        styleName = 'default';
+                    }
+                    
+                    const theme = THEMES[styleName];
+                    
+                    // Applica data-style al body (o rimuovi per default)
+                    if (styleName === 'default') {
+                        document.body.removeAttribute('data-style');
+                    } else {
+                        document.body.setAttribute('data-style', styleName);
+                    }
+                    
+                    // Aggiorna meta theme-color per PWA
+                    if (themeColorMeta) {
+                        themeColorMeta.setAttribute('content', theme.themeColor);
+                    }
+                    
+                    // Aggiorna UI selettore
+                    currentThemeName.textContent = theme.name;
+                    
+                    // Aggiorna stato attivo nelle opzioni
+                    themeOptions.forEach(opt => {
+                        opt.classList.toggle('active', opt.dataset.style === styleName);
+                    });
+                    
+                    // Salva preferenza
+                    localStorage.setItem(STORAGE_KEY, styleName);
+                    
+                    console.log(`🎨 Tema applicato: ${theme.name}`);
+                }
+                
+                /**
+                 * Toggle visibilità dropdown
+                 */
+                function toggleDropdown() {
+                    themeDropdown.classList.toggle('open');
+                }
+                
+                /**
+                 * Chiudi dropdown
+                 */
+                function closeDropdown() {
+                    themeDropdown.classList.remove('open');
+                }
+                
+                /**
+                 * Carica tema salvato
+                 */
+                function loadSavedStyle() {
+                    const saved = localStorage.getItem(STORAGE_KEY) || 'default';
+                    applyStyle(saved);
+                }
+                
+                // === EVENT LISTENERS ===
+                
+                // Click sul pulsante selettore
+                themeSelectorBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleDropdown();
+                });
+                
+                // Click su un'opzione tema
+                themeOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        const style = option.dataset.style;
+                        applyStyle(style);
+                        closeDropdown();
+                    });
+                });
+                
+                // Chiudi dropdown cliccando fuori
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.theme-selector')) {
+                        closeDropdown();
+                    }
+                });
+                
+                // Chiudi con ESC
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        closeDropdown();
+                    }
+                });
+                
+                // === INIZIALIZZAZIONE ===
+                loadSavedStyle();
+                
+                // Esponi API globale per debug
+                window.ThemeSelector = {
+                    apply: applyStyle,
+                    themes: THEMES
+                };
+                
+            })();
+        </script>
     </body>
 </html>

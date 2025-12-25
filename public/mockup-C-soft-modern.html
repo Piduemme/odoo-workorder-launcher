@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup C - Soft Modern</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* =============================================
+           MOCKUP C - SOFT MODERN
+           =============================================
+           Filosofia: Morbido, arrotondato, accogliente
+           - Sfondo con leggero gradiente
+           - Bordi molto arrotondati
+           - Colori pastello per le operazioni
+           - Ombre diffuse e morbide
+           - Cards con glassmorphism leggero
+        */
+
+        :root {
+            /* Palette soft */
+            --bg-gradient-start: #f0f4f8;
+            --bg-gradient-end: #e2e8f0;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-solid: #ffffff;
+            --bg-elevated: #ffffff;
+            
+            --border-soft: rgba(255, 255, 255, 0.8);
+            --border-subtle: rgba(0, 0, 0, 0.05);
+            
+            /* Testi */
+            --text-primary: #334155;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            
+            /* Accent Piduemme - versione soft */
+            --accent: #36a763;
+            --accent-soft: #d1fae5;
+            --accent-dark: #059669;
+            
+            /* Operazioni - versione pastello */
+            --color-estrusione: #22c55e;
+            --color-estrusione-soft: #dcfce7;
+            --color-saldatura: #f97316;
+            --color-saldatura-soft: #fed7aa;
+            --color-stampa: #3b82f6;
+            --color-stampa-soft: #dbeafe;
+            
+            /* Stati */
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+            
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            
+            /* Radius - molto arrotondati */
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+            --radius-full: 9999px;
+            
+            /* Shadows - morbide e diffuse */
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
+            --shadow-glow: 0 0 40px rgba(54, 167, 99, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Ubuntu', sans-serif;
+            font-weight: 300;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* === HEADER === */
+        .header {
+            background: var(--bg-elevated);
+            padding: var(--space-md) var(--space-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .header-logo {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .header h1 {
+            font-weight: 400;
+            font-size: 1.15rem;
+            color: var(--text-primary);
+        }
+
+        .header h1 span {
+            font-weight: 300;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--bg-gradient-start);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .header-btn:hover {
+            background: var(--accent-soft);
+            color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .status-bubble {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background: linear-gradient(135deg, var(--accent-soft) 0%, #a7f3d0 100%);
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--accent-dark);
+        }
+
+        .status-bubble .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* === TOOLBAR === */
+        .toolbar {
+            background: var(--bg-elevated);
+            padding: var(--space-md) var(--space-xl);
+            margin-bottom: var(--space-lg);
+        }
+
+        .toolbar-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: var(--space-lg);
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 420px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px;
+            padding-left: 48px;
+            border: none;
+            border-radius: var(--radius-full);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 300;
+            background: var(--bg-gradient-start);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: white;
+            box-shadow: var(--shadow-medium), 0 0 0 3px var(--accent-soft);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .btn-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-full);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-soft {
+            background: var(--bg-gradient-start);
+            color: var(--text-secondary);
+        }
+
+        .btn-soft:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-accent:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(54, 167, 99, 0.25);
+        }
+
+        /* === MAIN === */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--space-xl) var(--space-xl);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .btn-back-soft {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card-solid);
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+
+        .btn-back-soft:hover {
+            background: var(--accent-soft);
+            color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .section-title {
+            font-weight: 400;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+
+        .section-title span {
+            font-weight: 300;
+            color: var(--text-muted);
+        }
+
+        .operation-pill {
+            padding: var(--space-xs) var(--space-md);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .operation-pill.estrusione {
+            background: var(--color-estrusione-soft);
+            color: #15803d;
+        }
+
+        .operation-pill.saldatura {
+            background: var(--color-saldatura-soft);
+            color: #c2410c;
+        }
+
+        .operation-pill.stampa {
+            background: var(--color-stampa-soft);
+            color: #1d4ed8;
+        }
+
+        /* === TABS === */
+        .tabs {
+            display: inline-flex;
+            background: var(--bg-card-solid);
+            padding: var(--space-xs);
+            border-radius: var(--radius-full);
+            box-shadow: var(--shadow-soft);
+            margin-bottom: var(--space-xl);
+        }
+
+        .tab {
+            padding: 12px 28px;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-full);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .tab-count {
+            padding: 2px 10px;
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .tab.active .tab-count {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* === CARDS GRID === */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--space-lg);
+        }
+
+        /* === WORKCENTER CARD === */
+        .wc-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-xl);
+            padding: var(--space-lg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wc-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent-dark) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .wc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .wc-card:hover::before {
+            opacity: 1;
+        }
+
+        .wc-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-lg);
+        }
+
+        .wc-card-name {
+            font-weight: 500;
+            font-size: 1.05rem;
+            margin-bottom: 2px;
+        }
+
+        .wc-card-code {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .wc-card-stats {
+            display: flex;
+            gap: var(--space-xl);
+        }
+
+        .wc-stat {
+            text-align: center;
+        }
+
+        .wc-stat-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0 auto var(--space-xs);
+        }
+
+        .wc-stat-circle.active {
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+        }
+
+        .wc-stat-circle.ready {
+            background: var(--color-stampa-soft);
+            color: #1d4ed8;
+        }
+
+        .wc-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* === WORKORDER CARD === */
+        .wo-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-xl);
+            padding: var(--space-lg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+        }
+
+        .wo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .wo-card.in-progress::before {
+            content: "";
+            position: absolute;
+            top: var(--space-md);
+            right: var(--space-md);
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--success);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--success); }
+            50% { opacity: 0.6; box-shadow: 0 0 20px var(--success); }
+        }
+
+        .wo-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-sm);
+        }
+
+        .wo-card-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .wo-card-timer {
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: var(--space-xs) var(--space-md);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            border-radius: var(--radius-full);
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .wo-card-product {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            margin-bottom: var(--space-md);
+        }
+
+        .wo-card-meta {
+            display: flex;
+            gap: var(--space-lg);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+        }
+
+        .wo-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: var(--space-md);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .wo-badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: var(--space-xs) var(--space-md);
+            border-radius: var(--radius-full);
+        }
+
+        .wo-badge.ready {
+            background: var(--color-stampa-soft);
+            color: #1d4ed8;
+        }
+
+        .wo-badge.progress {
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+        }
+
+        /* === MODAL === */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(51, 65, 85, 0.4);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-lg);
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--bg-card-solid);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .modal-header {
+            padding: var(--space-lg);
+            text-align: center;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .modal-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-soft) 0%, #a7f3d0 100%);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto var(--space-md);
+        }
+
+        .modal-title {
+            font-weight: 500;
+            font-size: 1.15rem;
+        }
+
+        .modal-subtitle {
+            font-weight: 300;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: var(--space-xs);
+        }
+
+        .modal-body {
+            padding: var(--space-lg);
+        }
+
+        .modal-info-card {
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+        }
+
+        .modal-info-row {
+            display: flex;
+            padding: var(--space-sm) 0;
+        }
+
+        .modal-info-row + .modal-info-row {
+            border-top: 1px solid rgba(255,255,255,0.6);
+        }
+
+        .modal-info-label {
+            width: 110px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .modal-info-value {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .modal-footer {
+            padding: var(--space-lg);
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .btn-modal {
+            flex: 1;
+            padding: 14px var(--space-lg);
+            border: none;
+            border-radius: var(--radius-lg);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+        }
+
+        .btn-modal.secondary {
+            background: var(--bg-gradient-start);
+            color: var(--text-secondary);
+        }
+
+        .btn-modal.secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-modal.info {
+            background: var(--color-stampa-soft);
+            color: #1d4ed8;
+        }
+
+        .btn-modal.info:hover {
+            background: #bfdbfe;
+        }
+
+        .btn-modal.primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-modal.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(54, 167, 99, 0.3);
+        }
+
+        /* === LABEL === */
+        .mockup-label {
+            position: fixed;
+            top: var(--space-lg);
+            right: var(--space-lg);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: var(--shadow-glow);
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-label">C - Soft Modern</div>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <div class="header-logo">🏭</div>
+                <h1>Ordini di Lavoro <span>• Piduemme</span></h1>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn">🌙</button>
+                <button class="header-btn">⛶</button>
+                <div class="status-bubble">
+                    <span class="dot"></span>
+                    Connesso
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <div class="toolbar-inner">
+            <div class="search-box">
+                <input type="text" placeholder="Cerca work order...">
+            </div>
+            <div class="toolbar-actions">
+                <button class="btn-pill btn-soft">📷 Scansiona</button>
+                <button class="btn-pill btn-accent">🔄 Aggiorna</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <main class="main">
+        <div class="section-header">
+            <button class="btn-back-soft">←</button>
+            <h2 class="section-title">Estrusore 1 <span>• Centro di lavoro</span></h2>
+            <span class="operation-pill estrusione">Estrusione</span>
+        </div>
+
+        <div class="tabs">
+            <button class="tab">🔄 Attivi <span class="tab-count">2</span></button>
+            <button class="tab active">⏳ Pronti <span class="tab-count">5</span></button>
+        </div>
+
+        <div class="cards-grid">
+            <div class="wo-card">
+                <div class="wo-card-header">
+                    <div class="wo-card-name">WH/MO/00286/EST</div>
+                </div>
+                <div class="wo-card-product">📦 Film PE 50my Trasparente</div>
+                <div class="wo-card-meta">
+                    <span>📊 1500 kg</span>
+                    <span>⏱️ 4h 30m</span>
+                </div>
+                <div class="wo-card-footer">
+                    <span class="wo-badge ready">Pronto</span>
+                    <span class="operation-pill estrusione">Estrusione</span>
+                </div>
+            </div>
+
+            <div class="wo-card in-progress">
+                <div class="wo-card-header">
+                    <div class="wo-card-name">WH/MO/00285/EST</div>
+                    <div class="wo-card-timer">1h 23m</div>
+                </div>
+                <div class="wo-card-product">📦 Sacchetto HDPE 30x40</div>
+                <div class="wo-card-meta">
+                    <span>📊 800 kg</span>
+                    <span>⏱️ 2h 00m</span>
+                </div>
+                <div class="wo-card-footer">
+                    <span class="wo-badge progress">In corso</span>
+                    <span class="operation-pill estrusione">Estrusione</span>
+                </div>
+            </div>
+
+            <div class="wo-card">
+                <div class="wo-card-header">
+                    <div class="wo-card-name">WH/MO/00287/SAL</div>
+                </div>
+                <div class="wo-card-product">📦 Sacco industriale 60x90</div>
+                <div class="wo-card-meta">
+                    <span>📊 500 pz</span>
+                    <span>⏱️ 1h 15m</span>
+                </div>
+                <div class="wo-card-footer">
+                    <span class="wo-badge ready">Pronto</span>
+                    <span class="operation-pill saldatura">Saldatura</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="height: 48px;"></div>
+
+        <!-- Sezione Workcenters -->
+        <h2 class="section-title" style="margin-bottom: var(--space-lg);">Centri di Lavoro</h2>
+
+        <div class="cards-grid">
+            <div class="wc-card">
+                <div class="wc-card-header">
+                    <div>
+                        <div class="wc-card-name">Estrusore 1</div>
+                        <div class="wc-card-code">WC-EST-001</div>
+                    </div>
+                    <span class="operation-pill estrusione">Estrusione</span>
+                </div>
+                <div class="wc-card-stats">
+                    <div class="wc-stat">
+                        <div class="wc-stat-circle active">2</div>
+                        <div class="wc-stat-label">Attivi</div>
+                    </div>
+                    <div class="wc-stat">
+                        <div class="wc-stat-circle ready">5</div>
+                        <div class="wc-stat-label">Pronti</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wc-card">
+                <div class="wc-card-header">
+                    <div>
+                        <div class="wc-card-name">Saldatrice A</div>
+                        <div class="wc-card-code">WC-SAL-001</div>
+                    </div>
+                    <span class="operation-pill saldatura">Saldatura</span>
+                </div>
+                <div class="wc-card-stats">
+                    <div class="wc-stat">
+                        <div class="wc-stat-circle active">1</div>
+                        <div class="wc-stat-label">Attivi</div>
+                    </div>
+                    <div class="wc-stat">
+                        <div class="wc-stat-circle ready">3</div>
+                        <div class="wc-stat-label">Pronti</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wc-card">
+                <div class="wc-card-header">
+                    <div>
+                        <div class="wc-card-name">Stampa Flexo 2</div>
+                        <div class="wc-card-code">WC-STA-002</div>
+                    </div>
+                    <span class="operation-pill stampa">Stampa</span>
+                </div>
+                <div class="wc-card-stats">
+                    <div class="wc-stat">
+                        <div class="wc-stat-circle active">0</div>
+                        <div class="wc-stat-label">Attivi</div>
+                    </div>
+                    <div class="wc-stat">
+                        <div class="wc-stat-circle ready">8</div>
+                        <div class="wc-stat-label">Pronti</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL -->
+    <div class="modal-backdrop" style="display: flex;">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon">▶️</div>
+                <h3 class="modal-title">Avvia Lavorazione</h3>
+                <p class="modal-subtitle">WH/MO/00286/EST</p>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info-card">
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Prodotto</span>
+                        <span class="modal-info-value">Film PE 50my Trasparente</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Operazione</span>
+                        <span class="modal-info-value">
+                            <span class="operation-pill estrusione">Estrusione</span>
+                        </span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Quantità</span>
+                        <span class="modal-info-value">1500 kg</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Centro</span>
+                        <span class="modal-info-value">Estrusore 1</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal secondary">Annulla</button>
+                <button class="btn-modal info">📋 Dettagli</button>
+                <button class="btn-modal primary">▶️ Avvia</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

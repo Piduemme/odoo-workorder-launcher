@@ -290,11 +290,9 @@ const HIDDEN_WORKCENTERS = [
 async function getWorkcenters() {
   console.log("[ODOO] Recupero centri di lavoro...");
 
-  let workcenters = await executeKw(
-    "mrp.workcenter",
-    "search_read",
-    [[["active", "=", true]]],
-    {
+  // Esegui le 3 query in parallelo per massima efficienza
+  const [workcentersRaw, allWoStates, tags] = await Promise.all([
+    executeKw("mrp.workcenter", "search_read", [[["active", "=", true]]], {
       fields: [
         "id",
         "name",
@@ -305,34 +303,43 @@ async function getWorkcenters() {
         "machine_type_id",
       ],
       order: "sequence, name",
-    },
-  );
+    }),
+    // Una sola query per tutti i conteggi WO (invece di 2N query)
+    executeKw(
+      "mrp.workorder",
+      "search_read",
+      [[["state", "in", ["ready", "progress"]]]],
+      { fields: ["workcenter_id", "state"] },
+    ),
+    getWorkcenterTags(),
+  ]);
 
   // Filtra i centri di lavoro nascosti
-  workcenters = workcenters.filter(
+  const workcenters = workcentersRaw.filter(
     (wc) => !HIDDEN_WORKCENTERS.includes(wc.name.toLowerCase()),
   );
 
-  const tags = await getWorkcenterTags();
+  // Aggrega i conteggi per workcenter (O(n) invece di O(n) query)
+  const countsByWc = {};
+  for (const wo of allWoStates) {
+    const wcId = wo.workcenter_id ? wo.workcenter_id[0] : null;
+    if (!wcId) continue;
+
+    if (!countsByWc[wcId]) {
+      countsByWc[wcId] = { ready: 0, progress: 0 };
+    }
+    countsByWc[wcId][wo.state]++;
+  }
+
+  // Mappa tags per lookup veloce
   const tagMap = {};
   tags.forEach((t) => (tagMap[t.id] = t));
 
+  // Arricchisci workcenters con conteggi e tags
   for (const wc of workcenters) {
-    const readyCount = await executeKw("mrp.workorder", "search_count", [
-      [
-        ["workcenter_id", "=", wc.id],
-        ["state", "=", "ready"],
-      ],
-    ]);
-    const progressCount = await executeKw("mrp.workorder", "search_count", [
-      [
-        ["workcenter_id", "=", wc.id],
-        ["state", "=", "progress"],
-      ],
-    ]);
-
-    wc.ready_count = readyCount;
-    wc.progress_count = progressCount;
+    const counts = countsByWc[wc.id] || { ready: 0, progress: 0 };
+    wc.ready_count = counts.ready;
+    wc.progress_count = counts.progress;
     wc.tags = (wc.tag_ids || []).map((tid) => tagMap[tid]).filter(Boolean);
     wc.tag_names = wc.tags.map((t) => t.name);
     wc.machine_type_name = wc.machine_type_id ? wc.machine_type_id[1] : null;
