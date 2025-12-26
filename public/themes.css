@@ -853,6 +853,12 @@
     border-color: rgba(54, 167, 99, 0.3);
 }
 
+.theme-option[data-style="factory"] .theme-preview {
+    background: #1a1d21;
+    border-color: #00d26a;
+    box-shadow: 0 0 6px rgba(0, 210, 106, 0.5);
+}
+
 /* Adatta stili del selettore ai vari temi */
 [data-style="nordic"] .theme-selector-btn {
     background: var(--bg-tertiary);

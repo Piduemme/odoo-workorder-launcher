@@ -16,6 +16,7 @@
         <!-- Stili -->
         <link rel="stylesheet" href="style.css" />
         <link rel="stylesheet" href="themes.css" />
+        <link rel="stylesheet" href="theme-factory.css" />
         <link rel="manifest" href="manifest.json" />
         <!-- Libreria per scansione barcode -->
         <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -49,6 +50,10 @@
                         <button class="theme-option" data-style="soft">
                             <span class="theme-preview"></span>
                             <span>Soft Modern</span>
+                        </button>
+                        <button class="theme-option" data-style="factory">
+                            <span class="theme-preview"></span>
+                            <span>🏭 Factory Terminal</span>
                         </button>
                     </div>
                 </div>
@@ -530,6 +535,11 @@
                         name: 'Soft Modern', 
                         icon: '🌸',
                         themeColor: '#36a763'
+                    },
+                    factory: { 
+                        name: 'Factory Terminal', 
+                        icon: '🏭',
+                        themeColor: '#1a1d21'
                     }
                 };
                 

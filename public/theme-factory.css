@@ -1,0 +1,1084 @@
+/* ===============================================
+   === THEME: FACTORY TERMINAL v1.0 ==============
+   ===============================================
+   
+   Concept: Industrial HMI / Control Panel
+   Target: Operai su touchscreen in fabbrica
+   
+   Caratteristiche:
+   - Sfondo scuro (riduce affaticamento, visibile in ambienti luminosi)
+   - Colori alta visibilità (verde terminale, arancione warning, ciano info)
+   - Font monospace per codici (leggibilità, estetica tecnica)
+   - Touch target grandi (min 48px)
+   - Bordi netti, no ombre morbide
+   - Effetti "glow" stile display LED
+   - Feedback visivi forti per le azioni
+*/
+
+/* =============================================
+   CSS VARIABLES - FACTORY TERMINAL
+   ============================================= */
+
+[data-style="factory"] {
+    /* === BACKGROUND - Grigio antracite industriale === */
+    --bg-primary: #1a1d21;
+    --bg-secondary: #23272e;
+    --bg-tertiary: #2d333b;
+    --bg-elevated: #343a44;
+    
+    /* === TESTI - Alta leggibilità === */
+    --text-primary: #e6edf3;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    
+    /* === ACCENTO PRIMARIO - Verde terminale === */
+    --color-primary: #00d26a;
+    --color-primary-dark: #00a854;
+    --color-primary-light: #39ff9f;
+    --color-primary-glow: rgba(0, 210, 106, 0.4);
+    --color-primary-bg: rgba(0, 210, 106, 0.1);
+    
+    /* === COLORI FUNZIONALI - Alta visibilità === */
+    --color-success: #00d26a;
+    --color-warning: #ffb020;
+    --color-danger: #ff4757;
+    --color-info: #00c8ff;
+    
+    /* === COLORI OPERAZIONI - Distintivi e saturi === */
+    --color-estrusione: #00d26a;
+    --color-estrusione-bg: rgba(0, 210, 106, 0.15);
+    --color-saldatura: #ffb020;
+    --color-saldatura-bg: rgba(255, 176, 32, 0.15);
+    --color-stampa: #00c8ff;
+    --color-stampa-bg: rgba(0, 200, 255, 0.15);
+    
+    /* === BORDI - Netti, tecnici === */
+    --border-color: #3d444d;
+    --border-accent: var(--color-primary);
+    
+    /* === OMBRE - Glow invece di soft shadow === */
+    --shadow-sm: 0 0 0 1px var(--border-color);
+    --shadow-md: 0 0 0 1px var(--border-color), 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 0 0 1px var(--border-color), 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px var(--color-primary-glow);
+    --shadow-glow-warning: 0 0 20px rgba(255, 176, 32, 0.4);
+    --shadow-glow-danger: 0 0 20px rgba(255, 71, 87, 0.4);
+    
+    /* === DIMENSIONI - Touch friendly === */
+    --touch-target: 48px;
+    --spacing: 16px;
+    --spacing-sm: 8px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    
+    /* === BORDI - Angoli industriali === */
+    --border-radius: 4px;
+    --border-radius-lg: 8px;
+    
+    /* === TRANSIZIONI - Rapide, reattive === */
+    --transition-fast: 0.1s ease;
+    --transition-normal: 0.2s ease;
+}
+
+
+/* =============================================
+   TYPOGRAPHY - Industrial/Technical
+   ============================================= */
+
+[data-style="factory"] body {
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 400;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    /* Sottile pattern griglia */
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Font monospace per codici */
+[data-style="factory"] .card-name,
+[data-style="factory"] .info-value,
+[data-style="factory"] #modalWorkorderName,
+[data-style="factory"] #specsMoName,
+[data-style="factory"] .workorder-card .card-timer {
+    font-family: 'Ubuntu Mono', 'SF Mono', 'Consolas', monospace;
+    letter-spacing: 0.5px;
+}
+
+
+/* =============================================
+   HEADER - Control Panel Top Bar
+   ============================================= */
+
+[data-style="factory"] .header {
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--color-primary);
+    box-shadow: 0 0 20px var(--color-primary-glow);
+}
+
+[data-style="factory"] .header h1 {
+    font-weight: 500;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+[data-style="factory"] .header h1 .highlight {
+    color: var(--color-primary);
+    text-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+/* Header buttons - Touch friendly */
+[data-style="factory"] .header-btn {
+    width: var(--touch-target);
+    height: var(--touch-target);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1.3rem;
+}
+
+[data-style="factory"] .header-btn:hover,
+[data-style="factory"] .header-btn:active {
+    background: var(--color-primary-bg);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-glow);
+}
+
+/* Connection status - LED style */
+[data-style="factory"] .connection-status {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 8px 16px;
+    font-family: 'Ubuntu Mono', monospace;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+[data-style="factory"] .connection-status .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+[data-style="factory"] .connection-status .status-dot.connected {
+    background: var(--color-success);
+    box-shadow: 0 0 10px var(--color-success);
+    animation: led-blink 2s ease-in-out infinite;
+}
+
+@keyframes led-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+
+/* =============================================
+   THEME SELECTOR - Factory style
+   ============================================= */
+
+[data-style="factory"] .theme-selector-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    height: var(--touch-target);
+    padding: 0 16px;
+}
+
+[data-style="factory"] .theme-selector-btn:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
+}
+
+[data-style="factory"] .theme-dropdown {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+[data-style="factory"] .theme-option {
+    color: var(--text-primary);
+    min-height: var(--touch-target);
+}
+
+[data-style="factory"] .theme-option:hover {
+    background: var(--color-primary-bg);
+}
+
+[data-style="factory"] .theme-option.active {
+    background: var(--color-primary-bg);
+    border-left: 3px solid var(--color-primary);
+}
+
+
+/* =============================================
+   TOOLBAR - Control Strip
+   ============================================= */
+
+[data-style="factory"] .toolbar {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: var(--spacing);
+}
+
+/* Search bar - Terminal input style */
+[data-style="factory"] .search-bar {
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    height: var(--touch-target);
+}
+
+[data-style="factory"] .search-bar:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="factory"] .search-bar input {
+    font-family: 'Ubuntu Mono', monospace;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+[data-style="factory"] .search-bar input::placeholder {
+    color: var(--text-muted);
+    font-family: 'Ubuntu', sans-serif;
+}
+
+/* Scan button - Prominent */
+[data-style="factory"] .btn-scan {
+    width: var(--touch-target);
+    height: calc(var(--touch-target) - 8px);
+    background: var(--color-info);
+    border-radius: var(--border-radius);
+    font-size: 1.4rem;
+}
+
+[data-style="factory"] .btn-scan:hover,
+[data-style="factory"] .btn-scan:active {
+    background: #00a8d6;
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
+}
+
+/* Toolbar button - Primary action */
+[data-style="factory"] .toolbar-btn {
+    height: var(--touch-target);
+    padding: 0 24px;
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+[data-style="factory"] .toolbar-btn:hover,
+[data-style="factory"] .toolbar-btn:active {
+    background: var(--color-primary-light);
+    box-shadow: var(--shadow-glow);
+}
+
+/* Toggle switch - Industrial */
+[data-style="factory"] .toggle-slider {
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+[data-style="factory"] .toggle-switch input:checked + .toggle-slider {
+    background: var(--color-primary-bg);
+    border-color: var(--color-primary);
+}
+
+[data-style="factory"] .toggle-slider:before {
+    border-radius: 2px;
+    background: var(--text-muted);
+}
+
+[data-style="factory"] .toggle-switch input:checked + .toggle-slider:before {
+    background: var(--color-primary);
+    box-shadow: 0 0 8px var(--color-primary-glow);
+}
+
+/* Refresh select */
+[data-style="factory"] .refresh-select {
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: var(--border-radius);
+    height: 36px;
+    font-family: 'Ubuntu Mono', monospace;
+}
+
+[data-style="factory"] .control-label {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+
+/* =============================================
+   SECTION HEADERS
+   ============================================= */
+
+[data-style="factory"] .section-title {
+    color: var(--text-primary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 1.1rem;
+}
+
+[data-style="factory"] .section-header {
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: var(--spacing);
+}
+
+/* Back button */
+[data-style="factory"] .btn-back {
+    height: var(--touch-target);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+[data-style="factory"] .btn-back:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+
+/* =============================================
+   TABS - Segmented Control Style
+   ============================================= */
+
+[data-style="factory"] .tabs {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    padding: 4px;
+    border-radius: var(--border-radius);
+    gap: 4px;
+}
+
+[data-style="factory"] .tab {
+    height: calc(var(--touch-target) - 8px);
+    padding: 0 24px;
+    border-radius: 2px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+}
+
+[data-style="factory"] .tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+[data-style="factory"] .tab.active {
+    background: var(--color-primary);
+    color: var(--bg-primary);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="factory"] .tab-count {
+    background: rgba(0, 0, 0, 0.2);
+    font-family: 'Ubuntu Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 2px;
+}
+
+[data-style="factory"] .tab.active .tab-count {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+
+/* =============================================
+   FILTER TOGGLES
+   ============================================= */
+
+[data-style="factory"] .filter-toggle {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 8px 14px;
+    min-height: 40px;
+    color: var(--text-secondary);
+}
+
+[data-style="factory"] .filter-toggle:hover {
+    border-color: var(--color-primary);
+    color: var(--text-primary);
+}
+
+[data-style="factory"] .filter-toggle input {
+    accent-color: var(--color-primary);
+}
+
+
+/* =============================================
+   CARDS - Industrial Panels
+   ============================================= */
+
+/* === WORKCENTER CARDS === */
+[data-style="factory"] .workcenter-card {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-left: 4px solid var(--color-primary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    min-height: 130px;
+    transition: var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Indicator strip on top */
+[data-style="factory"] .workcenter-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--color-primary);
+    opacity: 0;
+    transition: var(--transition-fast);
+}
+
+[data-style="factory"] .workcenter-card:hover::before,
+[data-style="factory"] .workcenter-card:active::before {
+    opacity: 1;
+    box-shadow: 0 0 15px var(--color-primary-glow);
+}
+
+[data-style="factory"] .workcenter-card:hover,
+[data-style="factory"] .workcenter-card:active {
+    border-color: var(--color-primary);
+    transform: none;
+    box-shadow: var(--shadow-glow);
+}
+
+/* Rimuovi gradienti - usa colori solidi */
+[data-style="factory"] .workcenter-card.op-estrusione {
+    background: var(--bg-secondary);
+    border-left-color: var(--color-estrusione);
+}
+
+[data-style="factory"] .workcenter-card.op-saldatura {
+    background: var(--bg-secondary);
+    border-left-color: var(--color-saldatura);
+}
+
+[data-style="factory"] .workcenter-card.op-stampa {
+    background: var(--bg-secondary);
+    border-left-color: var(--color-stampa);
+}
+
+[data-style="factory"] .workcenter-card.op-estrusione:hover {
+    background: var(--color-estrusione-bg);
+    box-shadow: 0 0 20px rgba(0, 210, 106, 0.3);
+}
+
+[data-style="factory"] .workcenter-card.op-saldatura:hover {
+    background: var(--color-saldatura-bg);
+    box-shadow: 0 0 20px rgba(255, 176, 32, 0.3);
+}
+
+[data-style="factory"] .workcenter-card.op-stampa:hover {
+    background: var(--color-stampa-bg);
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.3);
+}
+
+[data-style="factory"] .workcenter-card .card-name {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+[data-style="factory"] .workcenter-card .card-code {
+    font-family: 'Ubuntu Mono', monospace;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Count badges - LED display style */
+[data-style="factory"] .workcenter-card .count-badge {
+    font-family: 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+    padding: 6px 14px;
+    border-radius: 2px;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+[data-style="factory"] .count-badge.active {
+    background: var(--color-estrusione-bg);
+    color: var(--color-estrusione);
+    border-color: var(--color-estrusione);
+}
+
+[data-style="factory"] .count-badge.ready {
+    background: var(--color-stampa-bg);
+    color: var(--color-info);
+    border-color: var(--color-info);
+}
+
+
+/* === WORKORDER CARDS === */
+[data-style="factory"] .workorder-card {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-left: 4px solid var(--color-primary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing);
+    min-height: 140px;
+    transition: var(--transition-fast);
+}
+
+[data-style="factory"] .workorder-card:hover,
+[data-style="factory"] .workorder-card:active {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-glow);
+    transform: none;
+}
+
+/* Active work order - Prominent glow */
+[data-style="factory"] .workorder-card.active {
+    border-color: var(--color-success);
+    background: linear-gradient(135deg, var(--color-estrusione-bg) 0%, var(--bg-secondary) 100%);
+    box-shadow: 0 0 25px var(--color-primary-glow);
+    animation: active-pulse 3s ease-in-out infinite;
+}
+
+@keyframes active-pulse {
+    0%, 100% { box-shadow: 0 0 20px var(--color-primary-glow); }
+    50% { box-shadow: 0 0 35px var(--color-primary-glow); }
+}
+
+[data-style="factory"] .workorder-card .card-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+[data-style="factory"] .workorder-card .card-product {
+    color: var(--text-secondary);
+}
+
+[data-style="factory"] .workorder-card .card-details {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Timer - Digital display */
+[data-style="factory"] .workorder-card .card-timer {
+    background: var(--color-success);
+    color: var(--bg-primary);
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    border-radius: 2px;
+    font-weight: 700;
+    box-shadow: 0 0 15px var(--color-primary-glow);
+    animation: timer-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes timer-glow {
+    0%, 100% { box-shadow: 0 0 10px var(--color-primary-glow); }
+    50% { box-shadow: 0 0 20px var(--color-primary-glow); }
+}
+
+/* State badges */
+[data-style="factory"] .card-state {
+    font-family: 'Ubuntu Mono', monospace;
+    border-radius: 2px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+}
+
+[data-style="factory"] .card-state.ready {
+    background: var(--color-stampa-bg);
+    color: var(--color-info);
+    border-color: var(--color-info);
+}
+
+[data-style="factory"] .card-state.progress {
+    background: var(--color-estrusione-bg);
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+
+/* Other workcenter indicator */
+[data-style="factory"] .workorder-card.other-workcenter {
+    border-left-color: var(--color-warning);
+}
+
+[data-style="factory"] .card-workcenter.different {
+    background: var(--color-saldatura-bg);
+    color: var(--color-warning);
+    border: 1px solid var(--color-warning);
+}
+
+
+/* =============================================
+   OPERATION BADGES - Color coded
+   ============================================= */
+
+[data-style="factory"] .workcenter-type-badge,
+[data-style="factory"] .operation-badge {
+    font-family: 'Ubuntu Mono', monospace;
+    font-weight: 700;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+}
+
+[data-style="factory"] .workcenter-type-badge.estrusione,
+[data-style="factory"] .operation-badge.estrusione {
+    background: var(--color-estrusione-bg);
+    color: var(--color-estrusione);
+    border-color: var(--color-estrusione);
+}
+
+[data-style="factory"] .workcenter-type-badge.saldatura,
+[data-style="factory"] .operation-badge.saldatura {
+    background: var(--color-saldatura-bg);
+    color: var(--color-saldatura);
+    border-color: var(--color-saldatura);
+}
+
+[data-style="factory"] .workcenter-type-badge.stampa,
+[data-style="factory"] .operation-badge.stampa {
+    background: var(--color-stampa-bg);
+    color: var(--color-stampa);
+    border-color: var(--color-stampa);
+}
+
+
+/* =============================================
+   EMPTY & LOADING STATES
+   ============================================= */
+
+[data-style="factory"] .empty-state,
+[data-style="factory"] .loading-placeholder {
+    background: var(--bg-secondary);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    color: var(--text-muted);
+}
+
+[data-style="factory"] .spinner {
+    border-color: var(--border-color);
+    border-top-color: var(--color-primary);
+}
+
+
+/* =============================================
+   MODALS - Industrial Dialog
+   ============================================= */
+
+[data-style="factory"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+}
+
+[data-style="factory"] .modal {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+}
+
+[data-style="factory"] .modal-header {
+    background: var(--bg-tertiary);
+    border-bottom: 2px solid var(--color-primary);
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+[data-style="factory"] .modal-title {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+[data-style="factory"] .modal-close {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    color: var(--text-secondary);
+}
+
+[data-style="factory"] .modal-close:hover {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    color: white;
+}
+
+[data-style="factory"] .modal-body {
+    background: var(--bg-secondary);
+}
+
+[data-style="factory"] .modal-workorder-info {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+[data-style="factory"] .info-label {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+[data-style="factory"] .info-value {
+    color: var(--text-primary);
+}
+
+/* Modal warnings */
+[data-style="factory"] .modal-warning {
+    background: var(--color-saldatura-bg);
+    border: 2px solid var(--color-warning);
+    border-radius: var(--border-radius);
+}
+
+[data-style="factory"] .modal-warning .warning-text {
+    color: var(--color-warning);
+}
+
+[data-style="factory"] .modal-error {
+    background: rgba(255, 71, 87, 0.1);
+    border: 2px solid var(--color-danger);
+}
+
+[data-style="factory"] .modal-error .warning-text {
+    color: var(--color-danger);
+}
+
+/* Modal actions */
+[data-style="factory"] .modal-actions {
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border-color);
+    padding: var(--spacing);
+}
+
+
+/* =============================================
+   BUTTONS - Touch-friendly, High visibility
+   ============================================= */
+
+[data-style="factory"] .btn {
+    min-height: var(--touch-target);
+    padding: 12px 24px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 2px solid transparent;
+    transition: var(--transition-fast);
+}
+
+[data-style="factory"] .btn-primary {
+    background: var(--color-primary);
+    color: var(--bg-primary);
+    border-color: var(--color-primary);
+}
+
+[data-style="factory"] .btn-primary:hover,
+[data-style="factory"] .btn-primary:active {
+    background: var(--color-primary-light);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="factory"] .btn-success {
+    background: var(--color-success);
+    color: var(--bg-primary);
+    border-color: var(--color-success);
+}
+
+[data-style="factory"] .btn-success:hover,
+[data-style="factory"] .btn-success:active {
+    background: var(--color-primary-light);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="factory"] .btn-warning {
+    background: var(--color-warning);
+    color: var(--bg-primary);
+    border-color: var(--color-warning);
+}
+
+[data-style="factory"] .btn-warning:hover,
+[data-style="factory"] .btn-warning:active {
+    box-shadow: var(--shadow-glow-warning);
+}
+
+[data-style="factory"] .btn-danger {
+    background: var(--color-danger);
+    color: white;
+    border-color: var(--color-danger);
+}
+
+[data-style="factory"] .btn-danger:hover,
+[data-style="factory"] .btn-danger:active {
+    box-shadow: var(--shadow-glow-danger);
+}
+
+[data-style="factory"] .btn-secondary {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-style="factory"] .btn-secondary:hover,
+[data-style="factory"] .btn-secondary:active {
+    border-color: var(--text-secondary);
+    background: var(--bg-tertiary);
+}
+
+[data-style="factory"] .btn-info {
+    background: var(--color-info);
+    color: var(--bg-primary);
+    border-color: var(--color-info);
+}
+
+[data-style="factory"] .btn-info:hover,
+[data-style="factory"] .btn-info:active {
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.4);
+}
+
+/* Workcenter selection buttons in modal */
+[data-style="factory"] .wc-btn {
+    min-height: 56px;
+    padding: 14px 16px;
+    font-weight: 600;
+    border-width: 2px;
+    border-radius: var(--border-radius);
+}
+
+[data-style="factory"] .wc-btn-compatible {
+    background: var(--color-estrusione-bg);
+    border-color: var(--color-estrusione);
+    color: var(--color-estrusione);
+}
+
+[data-style="factory"] .wc-btn-compatible:hover:not(:disabled) {
+    background: var(--color-estrusione);
+    color: var(--bg-primary);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="factory"] .wc-btn-incompatible {
+    background: var(--color-saldatura-bg);
+    border-color: var(--color-saldatura);
+    color: var(--color-saldatura);
+}
+
+[data-style="factory"] .wc-btn-incompatible:hover:not(:disabled) {
+    background: var(--color-saldatura);
+    color: var(--bg-primary);
+}
+
+
+/* =============================================
+   TOASTS - High visibility notifications
+   ============================================= */
+
+[data-style="factory"] .toast {
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 2px solid transparent;
+}
+
+[data-style="factory"] .toast.success {
+    background: var(--color-success);
+    border-color: var(--color-primary-light);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="factory"] .toast.error {
+    background: var(--color-danger);
+    border-color: #ff6b7a;
+    box-shadow: var(--shadow-glow-danger);
+}
+
+[data-style="factory"] .toast.warning {
+    background: var(--color-warning);
+    color: var(--bg-primary);
+    border-color: #ffc040;
+    box-shadow: var(--shadow-glow-warning);
+}
+
+[data-style="factory"] .toast.info {
+    background: var(--color-info);
+    border-color: #40d4ff;
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.4);
+}
+
+
+/* =============================================
+   SEARCH RESULTS
+   ============================================= */
+
+[data-style="factory"] .search-results {
+    background: var(--bg-secondary);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-glow);
+}
+
+[data-style="factory"] .search-results-header {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+[data-style="factory"] .search-result-item {
+    border-bottom-color: var(--border-color);
+    min-height: var(--touch-target);
+    padding: 14px var(--spacing);
+}
+
+[data-style="factory"] .search-result-item:hover {
+    background: var(--color-primary-bg);
+}
+
+[data-style="factory"] .search-result-name {
+    color: var(--color-primary);
+    font-family: 'Ubuntu Mono', monospace;
+}
+
+
+/* =============================================
+   SPECS MODAL - Technical document style
+   ============================================= */
+
+[data-style="factory"] .specs-info-section {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+[data-style="factory"] .specs-section,
+[data-style="factory"] .bom-section {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+[data-style="factory"] .specs-table th,
+[data-style="factory"] .bom-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-bottom-color: var(--border-color);
+}
+
+[data-style="factory"] .specs-table td,
+[data-style="factory"] .bom-table td {
+    border-bottom-color: var(--border-color);
+}
+
+[data-style="factory"] .specs-table input,
+[data-style="factory"] .specs-table select,
+[data-style="factory"] .bom-table input {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-style="factory"] .specs-table input:focus,
+[data-style="factory"] .bom-table input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-bg);
+}
+
+[data-style="factory"] .click-to-edit:hover {
+    background: var(--color-primary-bg);
+    border-color: var(--color-primary);
+}
+
+[data-style="factory"] .click-to-edit.modified {
+    background: var(--color-saldatura-bg);
+    border-color: var(--color-warning);
+}
+
+[data-style="factory"] .state-badge {
+    font-family: 'Ubuntu Mono', monospace;
+    border-radius: 2px;
+}
+
+[data-style="factory"] .btn-outline {
+    background: transparent;
+    border: 2px dashed var(--color-primary);
+    color: var(--color-primary);
+}
+
+[data-style="factory"] .btn-outline:hover {
+    background: var(--color-primary-bg);
+    border-style: solid;
+}
+
+
+/* =============================================
+   SCROLLBAR - Industrial style
+   ============================================= */
+
+[data-style="factory"] ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+[data-style="factory"] ::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+[data-style="factory"] ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+[data-style="factory"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+}
+
+
+/* =============================================
+   RESPONSIVE - Larger touch targets on mobile
+   ============================================= */
+
+@media (max-width: 768px) {
+    [data-style="factory"] {
+        --touch-target: 52px;
+    }
+    
+    [data-style="factory"] .workcenter-card,
+    [data-style="factory"] .workorder-card {
+        padding: var(--spacing-lg);
+    }
+    
+    [data-style="factory"] .btn {
+        min-height: 52px;
+        font-size: 1rem;
+    }
+    
+    [data-style="factory"] .tab {
+        height: 48px;
+        padding: 0 16px;
+    }
+}
